@@ -30,6 +30,11 @@ if (html.includes('positionCompatibility')) throw new Error('legacy position com
 if (!html.includes('批量转岗')) throw new Error('batch transfer copy is missing');
 if (!html.includes('id="btn-add-kb-member-single"')) throw new Error('single resource member entry is missing');
 if (!html.includes('id="btn-add-kb-member-org"')) throw new Error('organization resource member entry is missing');
+if (!html.includes('已删除用户展示')) throw new Error('deleted-user knowledge base notice is missing');
+if (!html.includes('已删除用户')) throw new Error('deleted-user member badge is missing');
+if (!html.includes('user_id = -1')) throw new Error('deleted-user fallback identifier is missing');
+if (!html.includes('kbMemberPermissionSubject')) throw new Error('deleted-user permission boundary helper is missing');
+if (!html.includes('kb-deleted-member-row')) throw new Error('deleted-user member row style is missing');
 if (!html.includes('const tr = document.createElement("tr")')) throw new Error('user table row must be created before rendering');
 if ((html.match(/<section class="page/g) || []).length !== 3) throw new Error('expected three page sections');
 if ((html.match(/<\/section>/g) || []).length !== 3) throw new Error('page sections should have balanced closing tags');
