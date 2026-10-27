@@ -1,5 +1,6 @@
 const fs = require('fs');
-const html = fs.readFileSync('/Users/rio/Desktop/零散文件/org-admin-poc/index.html', 'utf8');
+const path = require('path');
+const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
 if (html.includes('data-page="roles"')) throw new Error('role management navigation should be removed');
 if (html.includes('id="page-roles"')) throw new Error('role management page should be removed');
@@ -30,7 +31,8 @@ if (!html.includes('批量转岗')) throw new Error('batch transfer copy is miss
 if (!html.includes('id="btn-add-kb-member-single"')) throw new Error('single resource member entry is missing');
 if (!html.includes('id="btn-add-kb-member-org"')) throw new Error('organization resource member entry is missing');
 if (!html.includes('const tr = document.createElement("tr")')) throw new Error('user table row must be created before rendering');
-if ((html.match(/<\/section>/g) || []).length !== 2) throw new Error('page sections should have balanced closing tags');
+if ((html.match(/<section class="page/g) || []).length !== 3) throw new Error('expected three page sections');
+if ((html.match(/<\/section>/g) || []).length !== 3) throw new Error('page sections should have balanced closing tags');
 if (!html.includes('id="modal-kb-members"')) throw new Error('organization resource member modal is missing');
 if (html.includes('id="kb-member-query"')) throw new Error('organization resource entry should not have a user search box');
 if (html.includes('state.kbMemberQuery')) throw new Error('organization resource entry should not keep user search state');

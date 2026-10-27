@@ -1163,6 +1163,113 @@ table.data tr:hover td { background: #fafafa; }
   @media (max-width: 760px) { .content { padding:12px; overflow:auto; } .page-heading { flex-direction:column; } .split { flex-direction:column; } .split-left { width:auto; min-height:280px; max-height:360px; } .split-right { min-height:560px; } .page-heading-meta { padding-top:0; } .selection-bar { flex-wrap:wrap; } .result-summary { display:none; } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 
+  /* —— 用户详情 —— */
+  .user-link { border:0; background:transparent; padding:0; color:var(--primary); font:inherit; font-weight:600; cursor:pointer; text-align:left; }
+  .user-link:hover { color:var(--primary-hover); text-decoration:underline; }
+  .detail-grid { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(280px,.9fr); gap:16px; align-content:start; min-width:0; }
+  #page-user-detail { overflow-y:auto; padding-right:2px; }
+  .detail-card { padding:18px; min-width:0; }
+  .detail-identity { display:flex; align-items:center; gap:12px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+  .detail-identity .avatar { width:44px; height:44px; background:linear-gradient(135deg,#1677ff,#69b1ff); font-size:16px; }
+  .detail-identity h2 { font-size:17px; margin:0 0 2px; }
+  .detail-identity p { margin:0; color:var(--text-tertiary); font-size:12px; }
+  .detail-identity .state-tag { margin-left:auto; }
+  .kv-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 20px; padding-top:16px; }
+  .kv-item { display:grid; gap:3px; min-width:0; }
+  .kv-label { color:var(--text-tertiary); font-size:12px; }
+  .kv-value { color:var(--text); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .kv-value.mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; }
+  .detail-stat-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:14px 0 12px; }
+  .detail-stat { padding:12px; border:1px solid var(--border); border-radius:7px; background:#f7fafc; }
+  .detail-stat strong { display:block; color:var(--text); font-size:22px; line-height:1.2; }
+  .detail-stat span { color:var(--text-secondary); font-size:12px; }
+  .rule-note { padding:10px 12px; border:1px solid #d6e4ff; border-radius:6px; background:#f0f5ff; color:#1d39c4; font-size:12px; line-height:1.6; }
+  .detail-resource-panel { grid-column:1 / -1; }
+  .detail-actions { display:flex; justify-content:flex-end; gap:8px; padding-top:14px; margin-top:14px; border-top:1px solid var(--border); }
+
+  /* —— 删除向导 —— */
+  .wizard { width:760px; }
+  .wizard-steps { display:flex; align-items:center; gap:8px; padding:12px 24px; border-bottom:1px solid var(--border); background:#fafafa; flex-shrink:0; }
+  .wizard-step { display:flex; align-items:center; gap:6px; color:var(--text-tertiary); font-size:12px; white-space:nowrap; }
+  .wizard-step .num { display:grid; place-items:center; width:20px; height:20px; border:1px solid var(--border-strong); border-radius:50%; font-size:11px; background:#fff; }
+  .wizard-step.active { color:var(--primary); font-weight:600; }
+  .wizard-step.active .num { border-color:var(--primary); background:var(--primary); color:#fff; }
+  .wizard-step.done { color:var(--success); }
+  .wizard-step.done .num { border-color:var(--success); background:var(--success); color:#fff; }
+  .wizard-line { flex:1; height:1px; min-width:16px; background:var(--border); }
+  .wizard-target { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:7px; background:#f7fafc; margin-bottom:16px; }
+  .wizard-target .avatar { width:32px; height:32px; background:var(--primary); font-size:12px; }
+  .wizard-target strong { display:block; font-size:13px; }
+  .wizard-target span { color:var(--text-tertiary); font-size:12px; }
+  .wizard-target .state-tag { margin-left:auto; }
+  .impact-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
+  .impact-card { padding:14px; border:1px solid var(--border); border-radius:7px; }
+  .impact-card.danger { border-color:#ffd8bf; background:#fff9f5; }
+  .impact-card-head { display:flex; justify-content:space-between; color:var(--text-secondary); font-size:12px; }
+  .impact-card strong { display:block; font-size:24px; line-height:1.3; margin-top:6px; }
+  .impact-card small { color:var(--text-tertiary); font-size:11px; }
+  .callout { display:block; padding:10px 12px; border-radius:6px; font-size:12px; line-height:1.6; margin-bottom:14px; }
+  .callout > strong { margin-right:6px; }
+  .callout-info { background:#f0f5ff; border:1px solid #adc6ff; color:#1d39c4; }
+  .callout-warn { background:#fffbe6; border:1px solid #ffe58f; color:#ad6800; }
+  .callout-error { background:#fff1f0; border:1px solid #ffa39e; color:#cf1322; }
+  .section-title { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin:18px 0 8px; }
+  .section-title h4 { margin:0; font-size:13px; font-weight:600; }
+  .section-title span { color:var(--text-tertiary); font-size:12px; }
+  .wizard-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 24px; border-top:1px solid var(--border); flex-shrink:0; background:#fff; }
+  .wizard-foot .foot-right { display:flex; gap:8px; margin-left:auto; }
+  .assignee-cell .select { min-width:180px; }
+  .batch-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 12px; margin-bottom:10px; border:1px solid #d6e4ff; border-radius:7px; background:#f7f9fe; }
+  .batch-info { font-size:12px; color:var(--text-secondary); }
+  .batch-info strong { color:var(--primary); font-size:14px; }
+  .batch-bar .select { width:auto; flex:1 1 220px; min-width:200px; }
+  .batch-bar .btn { margin-left:0; flex:0 0 auto; }
+  .data tr.is-selected td { background:#f0f5ff; }
+  .assignment-source { margin-top:4px; color:var(--text-tertiary); font-size:11px; white-space:nowrap; }
+  .summary-details { margin-top:8px; border:1px solid var(--border); border-radius:7px; background:#fff; }
+  .summary-details summary { padding:9px 12px; cursor:pointer; color:var(--primary); font-size:12px; }
+  .summary-details ul { margin:0; padding:0 12px 10px 30px; color:var(--text-secondary); font-size:12px; }
+  .summary-details li { display:flex; justify-content:space-between; gap:12px; padding:3px 0; }
+  .record-actions { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .record-panel { margin-top:12px; padding:10px 12px; border:1px solid var(--border); border-radius:7px; background:#fafafa; }
+  .record-line { color:var(--text-secondary); font-size:12px; line-height:1.8; }
+  .record-line b { color:var(--text); font-weight:500; }
+  #wizard-body:focus { outline:none; }
+  .row-status { white-space:nowrap; }
+  .summary-list { border:1px solid var(--border); border-radius:7px; overflow:hidden; }
+  .summary-row { display:flex; justify-content:space-between; gap:12px; padding:9px 12px; border-top:1px solid var(--border); font-size:13px; color:var(--text-secondary); }
+  .summary-row:first-child { border-top:0; }
+  .summary-row strong { color:var(--text); }
+  .confirm-label { display:block; margin:16px 0 6px; font-size:13px; font-weight:500; }
+  .confirm-hint { margin-top:6px; font-size:12px; color:var(--text-tertiary); }
+  .confirm-hint.ok { color:var(--success); }
+  .confirm-hint.bad { color:var(--danger); }
+  .task-list { display:grid; gap:8px; }
+  .task-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:7px; }
+  .task-icon { display:grid; place-items:center; width:22px; height:22px; flex-shrink:0; border-radius:50%; background:#e4e7ec; color:#fff; font-size:12px; }
+  .task-item.done .task-icon { background:var(--success); }
+  .task-item.failed .task-icon { background:var(--danger); }
+  .task-copy { flex:1; min-width:0; }
+  .task-copy strong { display:block; font-size:13px; }
+  .task-copy span { color:var(--text-tertiary); font-size:12px; }
+  .task-state { font-size:12px; color:var(--text-tertiary); }
+  .task-item.done .task-state { color:var(--success); }
+  .task-item.failed .task-state { color:var(--danger); }
+  .result-banner { text-align:center; padding:20px; border:1px solid var(--border); border-radius:8px; background:#f7fafc; }
+  .result-banner .badge { display:grid; place-items:center; width:44px; height:44px; margin:0 auto 10px; border-radius:50%; background:var(--success); color:#fff; font-size:22px; }
+  .result-banner.failed .badge { background:var(--danger); }
+  .result-banner h4 { margin:0 0 4px; font-size:16px; }
+  .result-banner p { margin:0; color:var(--text-tertiary); font-size:12px; }
+  .fallback-preview { padding:12px; border:1px solid #d6e4ff; border-radius:7px; background:#f7f9fe; font-size:12px; }
+  .fallback-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .fallback-head .avatar { width:28px; height:28px; background:#dfe5ee; color:#5d6b82; font-size:11px; }
+  .fallback-head strong { font-size:13px; color:var(--text); }
+  .fallback-head span { color:var(--text-tertiary); font-size:11px; }
+  .fallback-line { display:flex; gap:6px; color:var(--text-secondary); line-height:1.7; }
+  .fallback-line b { color:var(--text); font-weight:500; }
+  @media (max-width: 900px) { .detail-grid { grid-template-columns:1fr; } .wizard { width:100%; } }
+  @media (max-width: 760px) { .kv-grid, .impact-grid { grid-template-columns:1fr; } .wizard-steps { overflow-x:auto; } .wizard-step { font-size:11px; } .wizard-foot { flex-wrap:wrap; } }
+
 </style>
 </head>
 <body>
@@ -1384,6 +1491,19 @@ table.data tr:hover td { background: #fafafa; }
               </div>
             </div>
           </div>
+        </section>
+
+        <!-- Page: 用户详情（从用户列表进入） -->
+        <section class="page" id="page-user-detail">
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow">组织管理 / 用户详情</div>
+              <h1 id="detail-title">用户详情</h1>
+              <p id="detail-subtitle">查看用户信息、资源归属和删除前处理项。</p>
+            </div>
+            <div class="page-heading-meta"><span class="status-dot"></span>本地演示数据 · 不会同步线上</div>
+          </div>
+          <div class="detail-grid" id="detail-grid"></div>
         </section>
 
       </div>
@@ -1651,8 +1771,25 @@ table.data tr:hover td { background: #fafafa; }
     </div>
   </div>
 
+  <!-- Modal: 用户删除流程 -->
+  <div class="modal-mask" id="delete-wizard" role="presentation">
+    <div class="modal wizard" role="dialog" aria-modal="true" aria-labelledby="wizard-title">
+      <div class="modal-header">
+        <div>
+          <h3 id="wizard-title">删除用户</h3>
+          <div class="modal-subtitle" id="wizard-subtitle">先处理资源和审批，再注销账号</div>
+        </div>
+        <button class="btn-icon" type="button" data-action="close-delete-flow" aria-label="关闭删除流程">✕</button>
+      </div>
+      <div class="wizard-steps" id="wizard-steps"></div>
+      <div class="modal-body" id="wizard-body" tabindex="-1"></div>
+      <div class="wizard-foot" id="wizard-foot"></div>
+    </div>
+  </div>
+
   <div class="toast-wrap" id="toast-wrap"></div>
 
+  <script src="user-delete-core.js"></script>
   <script>
 /* 组织与用户 · 本地可点原型 */
 (function () {
@@ -2179,7 +2316,9 @@ table.data tr:hover td { background: #fafafa; }
   });
   document.querySelectorAll(".modal-mask").forEach((mask) => {
     mask.addEventListener("click", (e) => {
-      if (e.target === mask) mask.classList.remove("show");
+      if (e.target !== mask) return;
+      if (mask.id === "delete-wizard") closeDeleteFlow();
+      else mask.classList.remove("show");
     });
   });
 
@@ -2200,6 +2339,7 @@ table.data tr:hover td { background: #fafafa; }
   const PAGE_TITLES = {
     "org-users": "组织与用户",
     "kb-perm": "知识库权限示例",
+    "user-detail": "用户详情",
   };
 
   document.querySelectorAll(".nav-item").forEach((btn) => {
@@ -2612,12 +2752,12 @@ table.data tr:hover td { background: #fafafa; }
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td class="check-col"><input type="checkbox" aria-label="选择 ${escapeHtml(u.name)}" data-user-select="${u.id}" ${selected ? "checked" : ""} /></td>
-        <td><div class="user-primary">${escapeHtml(u.name)}</div><div class="user-secondary">${escapeHtml(u.id.toUpperCase())}</div></td>
+        <td><button class="user-link" type="button" data-detail="${u.id}">${escapeHtml(u.name)}</button><div class="user-secondary">${escapeHtml(u.id.toUpperCase())}</div></td>
         <td><div>${escapeHtml(u.account)}</div><div class="user-secondary">${escapeHtml(u.email || u.phone || "未填写联系方式")}</div></td>
         <td><div class="user-primary">${escapeHtml(positionLabel(u.positionId))}</div><div class="user-secondary path-cell" title="${escapeHtml(pathLabel(u.positionId))}">${escapeHtml(pathLabel(u.positionId))}</div></td>
         <td><div class="role-stack">${roleTags(u.roleIds)}</div></td>
         <td><span class="state-tag ${u.positionId && findNode(u.positionId)?.type === "position" ? "state-active" : "state-warning"}">${u.positionId && findNode(u.positionId)?.type === "position" ? "正常" : "待设置岗位"}</span></td>
-        <td class="actions-cell action-col"><button class="btn-link" type="button" data-edit="${u.id}">编辑</button><button class="btn-link danger" type="button" data-del="${u.id}">删除</button></td>`;
+        <td class="actions-cell action-col"><button class="btn-link" type="button" data-detail="${u.id}">详情</button><button class="btn-link" type="button" data-edit="${u.id}">编辑</button><button class="btn-link danger" type="button" data-del="${u.id}">删除</button></td>`;
       tbody.appendChild(tr);
     }
     renderSelectionState(list);
@@ -2626,15 +2766,8 @@ table.data tr:hover td { background: #fafafa; }
       renderUsers();
     }));
     tbody.querySelectorAll("[data-edit]").forEach((btn) => btn.addEventListener("click", () => openUserForm(btn.dataset.edit)));
-    tbody.querySelectorAll("[data-del]").forEach((btn) => btn.addEventListener("click", () => {
-      const u = users.find((x) => x.id === btn.dataset.del);
-      confirmDialog("删除用户", `确定删除用户 <strong>${escapeHtml(u.name)}</strong>（${escapeHtml(u.account)}）？此操作不可恢复。`, () => {
-        users = users.filter((x) => x.id !== u.id);
-        state.selectedUserIds.delete(u.id);
-        toast("已删除用户 " + u.name);
-        renderUsers(); renderMainTree();
-      });
-    }));
+    tbody.querySelectorAll("[data-detail]").forEach((btn) => btn.addEventListener("click", () => openUserDetail(btn.dataset.detail)));
+    tbody.querySelectorAll("[data-del]").forEach((btn) => btn.addEventListener("click", () => openDeleteFlow(btn.dataset.del)));
   }
 
   document.getElementById("user-select-all").addEventListener("change", (event) => {
@@ -3210,6 +3343,638 @@ table.data tr:hover td { background: #fafafa; }
 
   document.getElementById("btn-confirm-kb-single-member").addEventListener("click", addSingleKbMember);
   document.getElementById("btn-confirm-kb-members").addEventListener("click", addSelectedKbMembers);
+
+  // ——— 用户删除流程 ———
+  const deleteResources = [
+    { id: "res-kb-customer", name: "客服知识库", type: "知识库", ownerId: "u1", creatorId: "u1", relation: "owner" },
+    { id: "res-agent-sales", name: "售前问答 Agent", type: "Agent", ownerId: "u1", creatorId: "u1", relation: "owner" },
+    { id: "res-drawing-a", name: "图纸项目 A", type: "图纸项目", ownerId: "u1", creatorId: "u1", relation: "owner" },
+    { id: "res-file-process", name: "工艺文件包", type: "文件", ownerId: "u1", creatorId: "u1", relation: "owner" },
+    { id: "res-kb-internal", name: "内部知识库", type: "知识库", ownerId: "u1", creatorId: "u1", relation: "owner" },
+    { id: "res-agent-support", name: "客服自动化 Agent", type: "Agent", ownerId: "u1", creatorId: "u1", relation: "owner" },
+    { id: "res-drawing-b", name: "图纸项目 B", type: "图纸项目", ownerId: "u1", creatorId: "u1", relation: "owner" },
+    { id: "res-kb-shared", name: "共享知识库", type: "知识库", ownerId: "u2", creatorId: "u2", relation: "editor", memberIds: ["u1"] },
+  ];
+  const deleteApprovals = UserDeleteCore.createApprovals();
+
+  const deleteFlow = {
+    userId: null,
+    userSnapshot: null,
+    step: "impact",
+    assignments: {},
+    assignmentSource: {},
+    batchApplied: false,
+    batchAssignee: "",
+    selectedResourceIds: new Set(),
+    confirmText: "",
+    mode: "success",
+    task: null,
+    error: "",
+    retryStep: "",
+    renderStep: "",
+    showFallback: false,
+    showRecord: false,
+  };
+
+  function detailUser() {
+    return users.find((user) => user.id === deleteFlow.userId) || null;
+  }
+
+  function activeDeleteUser() {
+    return detailUser() || deleteFlow.userSnapshot || null;
+  }
+
+  function ownedResourcesOf(userId) {
+    return UserDeleteCore.getOwnedResources(deleteResources, userId);
+  }
+
+  function sharedResourcesOf(userId) {
+    return deleteResources.filter((resource) => resource.relation !== "owner" && (resource.memberIds || []).indexOf(userId) !== -1);
+  }
+
+  function transferCandidates(userId) {
+    return UserDeleteCore.getTransferCandidates(users, userId);
+  }
+
+  function roleLabelOf(user) {
+    const roles = user.roleIds || [];
+    if (roles.indexOf("r-admin") !== -1) return "管理员";
+    return "子管理员";
+  }
+
+  function resourceTypeClass(type) {
+    if (type === "Agent") return "tag-purple";
+    if (type === "图纸项目") return "tag-orange";
+    if (type === "文件") return "tag-green";
+    return "tag-blue";
+  }
+
+  function showPage(pageId) {
+    state.page = pageId;
+    document.querySelectorAll(".page").forEach((page) => page.classList.toggle("active", page.id === "page-" + pageId));
+    document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.page === "org-users"));
+    document.getElementById("crumb").textContent = PAGE_TITLES[pageId] || "组织与用户";
+  }
+
+  function openUserDetail(userId) {
+    deleteFlow.userId = userId;
+    deleteFlow.userSnapshot = null;
+    showPage("user-detail");
+    renderUserDetail();
+  }
+
+  function backToUsers() {
+    showPage("org-users");
+    deleteFlow.userId = null;
+    deleteFlow.userSnapshot = null;
+    renderUsers();
+    renderMainTree();
+  }
+
+  function renderUserDetail() {
+    const user = detailUser();
+    const grid = document.getElementById("detail-grid");
+    if (!user) {
+      document.getElementById("detail-title").textContent = "用户详情";
+      grid.innerHTML = `<div class="panel detail-card"><div class="empty-state">用户不存在或已删除</div></div>`;
+      return;
+    }
+    const owned = ownedResourcesOf(user.id);
+    const shared = sharedResourcesOf(user.id);
+    document.getElementById("detail-title").textContent = user.name;
+    document.getElementById("detail-subtitle").textContent = `${user.account} · ${positionLabel(user.positionId)}`;
+
+    const ownedRows = owned.length
+      ? owned.map((resource) => `<tr><td><span class="user-primary">${escapeHtml(resource.name)}</span></td><td><span class="tag ${resourceTypeClass(resource.type)}">${escapeHtml(resource.type)}</span></td><td><span class="tag tag-blue">所有者</span></td><td><span class="state-tag state-warning">删除前需转让</span></td></tr>`).join("")
+      : `<tr><td colspan="4"><div class="empty-state">该用户没有需要转让的资源</div></td></tr>`;
+    const sharedRows = shared.map((resource) => `<tr><td><span class="user-primary">${escapeHtml(resource.name)}</span></td><td><span class="tag ${resourceTypeClass(resource.type)}">${escapeHtml(resource.type)}</span></td><td><span class="tag">${resource.relation === "editor" ? "编辑者" : "使用者"}</span></td><td><span class="state-tag state-active">不转让</span></td></tr>`).join("");
+
+    grid.innerHTML = `
+      <article class="panel detail-card">
+        <div class="detail-identity">
+          <div class="avatar">${escapeHtml(user.name.slice(0, 1))}</div>
+          <div><h2>${escapeHtml(user.name)}</h2><p class="mono">${escapeHtml(user.account)}</p></div>
+          <span class="state-tag state-active">正常</span>
+        </div>
+        <div class="kv-grid">
+          <div class="kv-item"><span class="kv-label">姓名</span><span class="kv-value">${escapeHtml(user.name)}</span></div>
+          <div class="kv-item"><span class="kv-label">账号</span><span class="kv-value mono">${escapeHtml(user.account)}</span></div>
+          <div class="kv-item"><span class="kv-label">邮箱</span><span class="kv-value">${escapeHtml(user.email || "未填写")}</span></div>
+          <div class="kv-item"><span class="kv-label">手机</span><span class="kv-value">${escapeHtml(user.phone || "未填写")}</span></div>
+          <div class="kv-item"><span class="kv-label">岗位</span><span class="kv-value">${escapeHtml(pathLabel(user.positionId))}</span></div>
+          <div class="kv-item"><span class="kv-label">角色</span><span class="kv-value">${user.roleIds.map((id) => { const role = roles.find((item) => item.id === id); return role ? role.name : id; }).join("、")}</span></div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn" type="button" data-action="edit-detail-user">编辑用户</button>
+          <button class="btn btn-danger" type="button" data-action="open-delete-flow">删除用户</button>
+        </div>
+      </article>
+      <article class="panel detail-card">
+        <div class="panel-header" style="padding:0 0 12px;border:0"><div><h2>删除前检查</h2><span class="panel-caption">完成资源和审批处理后才允许注销</span></div><span class="state-tag state-warning">待处理</span></div>
+        <div class="detail-stat-row">
+          <div class="detail-stat"><strong>${owned.length}</strong><span>待转让资源</span></div>
+          <div class="detail-stat"><strong>${deleteApprovals.length}</strong><span>未结束审批</span></div>
+        </div>
+        <div class="rule-note"><strong>处理规则</strong><br>只转让所有者资源，编辑权和使用权不转让；未结束审批由系统驳回，原因固定为“该用户已注销”。</div>
+      </article>
+      <article class="panel detail-card detail-resource-panel">
+        <div class="panel-header" style="padding:0 0 12px;border:0"><div><h2>关联资源</h2><span class="panel-caption">仅所有者资源进入删除前转让流程</span></div><span class="panel-caption">${owned.length + shared.length} 项</span></div>
+        <div class="table-wrap" style="max-height:320px">
+          <table class="data">
+            <thead><tr><th>资源名称</th><th>类型</th><th>用户关系</th><th>删除前处理</th></tr></thead>
+            <tbody>${ownedRows}${sharedRows || ""}</tbody>
+          </table>
+        </div>
+      </article>`;
+  }
+
+  function openDeleteFlow(userId) {
+    const targetId = userId || deleteFlow.userId;
+    const user = users.find((item) => item.id === targetId);
+    if (!user) {
+      toast("请选择需要删除的用户", "error");
+      return;
+    }
+    deleteFlow.userId = targetId;
+    deleteFlow.userSnapshot = Object.assign({}, user);
+    deleteFlow.step = "impact";
+    deleteFlow.assignments = UserDeleteCore.createAssignments(ownedResourcesOf(targetId));
+    deleteFlow.assignmentSource = {};
+    deleteFlow.batchApplied = false;
+    deleteFlow.batchAssignee = "";
+    deleteFlow.selectedResourceIds = new Set();
+    deleteFlow.confirmText = "";
+    deleteFlow.mode = "success";
+    deleteFlow.task = null;
+    deleteFlow.error = "";
+    deleteFlow.retryStep = "";
+    deleteFlow.showFallback = false;
+    deleteFlow.showRecord = false;
+    renderDeleteWizard();
+    openModal("delete-wizard");
+    const body = document.getElementById("wizard-body");
+    if (body) body.focus();
+  }
+
+  function closeDeleteFlow() {
+    closeModal("delete-wizard");
+    deleteFlow.step = "impact";
+    deleteFlow.task = null;
+    deleteFlow.error = "";
+    deleteFlow.showRecord = false;
+    deleteFlow.selectedResourceIds = new Set();
+    if (!detailUser()) deleteFlow.userSnapshot = null;
+    if (state.page === "user-detail") renderUserDetail();
+  }
+
+  function wizardStepMarkup() {
+    const currentIndex = deleteFlow.step === "impact" ? 0 : deleteFlow.step === "transfer" ? 1 : deleteFlow.step === "result" ? 3 : 2;
+    const steps = [{ label: "影响检查" }, { label: "资源与审批处理" }, { label: "最终确认" }];
+    return steps.map((step, index) => {
+      const cls = index < currentIndex ? "done" : index === currentIndex ? "active" : "";
+      const num = index < currentIndex ? "✓" : String(index + 1);
+      return `${index ? '<span class="wizard-line"></span>' : ""}<div class="wizard-step ${cls}"><span class="num">${num}</span>${step.label}</div>`;
+    }).join("");
+  }
+
+  function wizardTargetMarkup(user) {
+    return `<div class="wizard-target"><div class="avatar">${escapeHtml(user.name.slice(0, 1))}</div><div><strong>${escapeHtml(user.name)}</strong><span class="mono">${escapeHtml(user.account)}</span></div><span class="state-tag state-active">正常</span></div>`;
+  }
+
+  function approvalRowsMarkup() {
+    return deleteApprovals.map((approval) => `<tr><td>${escapeHtml(approval.name)}</td><td>${escapeHtml(approval.reference)}</td><td><span class="tag">${escapeHtml(approval.referenceType)}</span></td><td>${escapeHtml(approval.node)}</td><td><span class="tag tag-red">系统驳回</span></td></tr>`).join("");
+  }
+
+  function approvalTableMarkup(maxHeight) {
+    return `<div class="table-wrap" style="max-height:${maxHeight || 200}px"><table class="data"><thead><tr><th>审批名称</th><th>用户引用</th><th>引用类型</th><th>当前节点</th><th>处理方式</th></tr></thead><tbody>${approvalRowsMarkup()}</tbody></table></div>`;
+  }
+
+  function impactMarkup(user) {
+    const owned = ownedResourcesOf(user.id);
+    const candidates = transferCandidates(user.id);
+    const rows = owned.length
+      ? owned.map((resource) => `<tr><td><span class="user-primary">${escapeHtml(resource.name)}</span></td><td><span class="tag ${resourceTypeClass(resource.type)}">${escapeHtml(resource.type)}</span></td><td><span class="state-tag state-warning">待转让</span></td></tr>`).join("")
+      : `<tr><td colspan="3"><div class="empty-state">该用户没有拥有的资源</div></td></tr>`;
+    return `
+      ${wizardTargetMarkup(user)}
+      <div class="impact-grid">
+        <div class="impact-card"><div class="impact-card-head"><span>待转让资源</span><span>所有权</span></div><strong>${owned.length}</strong><small>仅统计用户作为所有者的资源</small></div>
+        <div class="impact-card danger"><div class="impact-card-head"><span>未结束审批</span><span>系统驳回</span></div><strong>${deleteApprovals.length}</strong><small>驳回原因：该用户已注销</small></div>
+      </div>
+      ${owned.length && candidates.length === 0 ? '<div class="callout callout-error"><strong>没有合格的接收人</strong>当前没有其他正常状态的管理员或子管理员，需先补充管理员后再删除。</div>' : ""}
+      <div class="callout callout-info"><strong>处理规则</strong>删除前必须完成全部所有者资源转让；编辑权和使用权不转让；用户参与的未结束审批由系统直接驳回，不提供转交。</div>
+      <div class="section-title"><h4>用户拥有的资源</h4><span>${owned.length} 项</span></div>
+      <div class="table-wrap" style="max-height:220px"><table class="data"><thead><tr><th>资源名称</th><th>类型</th><th>处理方式</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="section-title"><h4>未结束审批</h4><span>${deleteApprovals.length} 条</span></div>
+      ${approvalTableMarkup(200)}`;
+  }
+
+  function transferMarkup(user) {
+    const owned = ownedResourcesOf(user.id);
+    const candidates = transferCandidates(user.id);
+    const selectedCount = deleteFlow.selectedResourceIds.size;
+    const batchOptions = candidates.map((candidate) => `<option value="${candidate.id}" ${deleteFlow.batchAssignee === candidate.id ? "selected" : ""}>${escapeHtml(candidate.name)} · ${roleLabelOf(candidate)}</option>`).join("");
+    const rows = owned.length
+      ? owned.map((resource) => {
+        const value = deleteFlow.assignments[resource.id] || "";
+        const source = deleteFlow.assignmentSource[resource.id] || "";
+        const options = candidates.map((candidate) => `<option value="${candidate.id}" ${value === candidate.id ? "selected" : ""}>${escapeHtml(candidate.name)} · ${roleLabelOf(candidate)}</option>`).join("");
+        const singleHint = value && source === "single" && deleteFlow.batchApplied ? '<div class="assignment-source" data-assignment-source="single">已使用单独配置</div>' : "";
+        return `<tr data-resource-row="${resource.id}" class="${deleteFlow.selectedResourceIds.has(resource.id) ? "is-selected" : ""}">
+          <td class="check-col"><input type="checkbox" data-resource-check="${resource.id}" aria-label="选择 ${escapeHtml(resource.name)}" ${deleteFlow.selectedResourceIds.has(resource.id) ? "checked" : ""} /></td>
+          <td><span class="user-primary">${escapeHtml(resource.name)}</span><div class="user-secondary">${escapeHtml(resource.type)}</div></td>
+          <td><span class="tag ${resourceTypeClass(resource.type)}">${escapeHtml(resource.type)}</span></td>
+          <td class="assignee-cell"><select class="select" data-resource-id="${resource.id}" aria-label="${escapeHtml(resource.name)}的新所有者"><option value="">请选择接收人</option>${options}</select></td>
+          <td class="row-status">${value ? `<span class="state-tag state-active">已配置</span>${singleHint}` : '<span class="state-tag state-warning">待处理</span>'}</td>
+        </tr>`;
+      }).join("")
+      : `<tr><td colspan="5"><div class="empty-state">该用户没有拥有的资源</div></td></tr>`;
+    return `
+      ${wizardTargetMarkup(user)}
+      ${deleteFlow.error ? `<div class="callout callout-error"><strong>${escapeHtml(deleteFlow.error)}</strong></div>` : ""}
+      <div class="callout callout-info"><strong>转让规则</strong>仅转让所有权，编辑权和使用权保持不变；可先批量选择多项资源转让给同一人，再单独调整某一项。接收人必须是正常状态的管理员或子管理员。</div>
+      <div class="section-title"><h4>资源所有权转让</h4><span data-assign-counter>已配置 ${Object.keys(deleteFlow.assignments).filter((id) => deleteFlow.assignments[id]).length} / ${owned.length}</span></div>
+      <div class="batch-bar">
+        <div class="batch-info">已选 <strong data-batch-count>${selectedCount}</strong> 项资源</div>
+        <select class="select" id="batch-assignee" aria-label="批量转让接收人">
+          <option value="">选择接收人</option>
+          ${batchOptions}
+        </select>
+        <button class="btn btn-primary btn-sm" type="button" data-action="apply-batch-assignee" ${selectedCount && deleteFlow.batchAssignee ? "" : "disabled"}>批量转让给</button>
+      </div>
+      <div class="table-wrap" style="max-height:260px"><table class="data"><thead><tr><th class="check-col"><input type="checkbox" id="resource-select-all" aria-label="选择全部待转让资源" ${owned.length && selectedCount === owned.length ? "checked" : ""} /></th><th>资源名称</th><th>类型</th><th>新所有者</th><th>状态</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="section-title"><h4>审批处理</h4><span>${deleteApprovals.length} 条</span></div>
+      <div class="callout callout-warn"><strong>系统处理</strong>用户参与的未结束审批统一驳回，不提供转交；覆盖待办、审批中、抄送、会签、加签和代理人等引用。驳回原因固定为“该用户已注销”，历史记录保留并展示为“已删除用户”。</div>
+      ${approvalTableMarkup(200)}`;
+  }
+
+  function confirmMarkup(user) {
+    const owned = ownedResourcesOf(user.id);
+    const summary = UserDeleteCore.summarizeAssignments(owned, deleteFlow.assignments, users);
+    const approvalSummary = UserDeleteCore.summarizeApprovals(deleteApprovals);
+    const detailRows = owned.map((resource) => {
+      const assignee = users.find((item) => item.id === deleteFlow.assignments[resource.id]);
+      return `<li><span>${escapeHtml(resource.name)}</span><span>${escapeHtml(resource.type)} → ${assignee ? escapeHtml(assignee.name) : "待配置"}</span></li>`;
+    }).join("");
+    const matches = deleteFlow.confirmText === user.account;
+    const hintClass = matches ? "ok" : deleteFlow.confirmText ? "bad" : "";
+    const hintText = matches ? "账号匹配，可以继续删除。" : deleteFlow.confirmText ? "账号不匹配，请重新输入。" : "输入账号后才可启用删除按钮。";
+    return `
+      ${wizardTargetMarkup(user)}
+      <div class="section-title"><h4>资源转让摘要</h4><span>${owned.length} 项 · 仅转让所有权</span></div>
+      <div class="summary-list">${summary.map((entry) => `<div class="summary-row"><span>转让给 ${escapeHtml(entry.name)}</span><strong>${entry.count} 项资源</strong></div>`).join("") || '<div class="summary-row"><span>暂无资源需要转让</span><strong>0 项</strong></div>'}</div>
+      ${owned.length ? `<details class="summary-details"><summary>查看资源明细</summary><ul>${detailRows}</ul></details>` : ""}
+      <div class="callout callout-info" style="margin-top:10px"><strong>权限边界</strong>编辑权和使用权保持不变；资源接收人只获得所有者身份。</div>
+      <div class="section-title"><h4>审批处理摘要</h4><span>${deleteApprovals.length} 条</span></div>
+      <div class="summary-list">
+        ${approvalSummary.map((entry) => `<div class="summary-row"><span>${escapeHtml(entry.type)}</span><strong>${entry.count} 条</strong></div>`).join("")}
+        <div class="summary-row"><span>驳回原因</span><strong>该用户已注销</strong></div>
+      </div>
+      <div class="section-title"><h4>演示执行结果</h4><span>POC 模拟</span></div>
+      <select class="select" id="delete-mode" aria-label="模拟执行结果">
+        <option value="success" ${deleteFlow.mode === "success" ? "selected" : ""}>全部成功</option>
+        <option value="transfer-failure" ${deleteFlow.mode === "transfer-failure" ? "selected" : ""}>资源转让失败</option>
+        <option value="approval-failure" ${deleteFlow.mode === "approval-failure" ? "selected" : ""}>审批处理失败</option>
+        <option value="delete-failure" ${deleteFlow.mode === "delete-failure" ? "selected" : ""}>用户注销失败</option>
+      </select>
+      <div class="callout callout-warn" style="margin-top:14px"><strong>不可逆操作</strong>删除后该用户无法登录，资源和审批处理结果会写入处理记录；删除后状态为<strong>已注销</strong>。</div>
+      <label class="confirm-label" for="delete-confirm-input">请输入 ${escapeHtml(user.account)} 以确认删除</label>
+      <input class="input" id="delete-confirm-input" value="${escapeHtml(deleteFlow.confirmText)}" autocomplete="off" />
+      <div class="confirm-hint ${hintClass}">${hintText}</div>`;
+  }
+
+  function resultMarkup(user) {
+    const task = deleteFlow.task;
+    const success = task && task.status === "success";
+    const steps = (task ? task.steps : []).map((step) => `<div class="task-item ${step.status}"><span class="task-icon">${step.status === "done" ? "✓" : step.status === "failed" ? "!" : "·"}</span><div class="task-copy"><strong>${escapeHtml(step.label)}</strong><span>${escapeHtml(step.error || (step.status === "done" ? "已完成" : "等待处理"))}</span></div><span class="task-state">${step.status === "done" ? "完成" : step.status === "failed" ? "失败" : "未处理"}</span></div>`).join("");
+    const target = user || { name: "该用户", account: "" };
+    const completedAt = task && task.completedAt ? new Date(task.completedAt).toLocaleString("zh-CN", { hour12: false }) : "-";
+    const transfers = (task && task.transfers) || [];
+    const transferLines = transfers.map((transfer) => `${transfer.name} → ${(users.find((item) => item.id === transfer.assigneeId) || {}).name || "未配置"}`).join("；");
+    const sampleTransfer = transfers[0];
+    const sample = sampleTransfer ? deleteResources.find((resource) => resource.id === sampleTransfer.resourceId) : null;
+    const sampleOwner = sampleTransfer ? users.find((item) => item.id === sampleTransfer.assigneeId) : null;
+    return `
+      <div class="result-banner ${success ? "" : "failed"}"><div class="badge">${success ? "✓" : "!"}</div><h4>${success ? (task && task.retried ? "重试成功，用户已删除" : "用户已删除") : "用户删除未完成"}</h4><p>${success ? "资源所有权和审批处理已完成，账号已注销。" : escapeHtml((task && task.steps.find((step) => step.status === "failed") || {}).error || "请处理失败原因后重试。")}</p></div>
+      <div class="section-title"><h4>处理进度</h4><span>${task ? task.taskId : ""}</span></div>
+      <div class="task-list">${steps}</div>
+      ${success ? `
+        <div class="section-title"><h4>处理摘要</h4><span>${escapeHtml(target.account)}</span></div>
+        <div class="summary-list">
+          <div class="summary-row"><span>删除用户</span><strong>${escapeHtml(target.name)}（${escapeHtml(target.account)}）</strong></div>
+          <div class="summary-row"><span>删除时间</span><strong>${escapeHtml(completedAt)}</strong></div>
+          <div class="summary-row"><span>资源转让</span><strong>${task.resourceCount} 项</strong></div>
+          <div class="summary-row"><span>审批驳回</span><strong>${task.approvalCount} 条</strong></div>
+          <div class="summary-row"><span>驳回原因</span><strong>${escapeHtml(task.rejectionReason)}</strong></div>
+          <div class="summary-row"><span>用户状态</span><strong>已注销</strong></div>
+        </div>
+        ${deleteFlow.showRecord ? `<div class="record-panel">
+          <div class="record-line"><b>操作人：</b>当前管理员</div>
+          <div class="record-line"><b>操作时间：</b>${escapeHtml(completedAt)}</div>
+          <div class="record-line"><b>删除用户：</b>${escapeHtml(target.name)}（${escapeHtml(target.account)}）</div>
+          <div class="record-line"><b>资源转让：</b>${escapeHtml(transferLines || "无")}</div>
+          <div class="record-line"><b>审批驳回：</b>${task.approvalCount} 条，原因：${escapeHtml(task.rejectionReason)}</div>
+          <div class="record-line"><b>执行异常：</b>无</div>
+        </div>` : ""}
+        <div class="section-title"><h4>删除后的资源查询</h4><span>兜底展示</span></div>
+        <div class="callout callout-info"><strong>查询兜底</strong>资源仍存在但用户已删除时，用配置的占位用户（user_id = -1）填充展示字段；占位身份不参与实时权限判断。</div>
+        ${deleteFlow.showFallback ? `<div class="fallback-preview"><div class="fallback-head"><div class="avatar">删</div><div><strong>${escapeHtml(sample ? sample.name : "客服知识库")}</strong><span>资源仍可访问</span></div><span class="tag">已删除用户</span></div><div class="fallback-line"><b>所有者：</b>${escapeHtml(sampleOwner ? sampleOwner.name : "未配置")}（已完成转让）</div><div class="fallback-line"><b>创建人：</b>已删除用户（user_id = -1）</div><div class="fallback-line"><b>权限判断：</b>使用当前登录用户，不使用占位身份</div></div>` : ""}
+        <div class="record-actions">
+          <button class="btn btn-sm" type="button" data-action="show-fallback-resource">${deleteFlow.showFallback ? "收起资源页面" : "查看资源页面"}</button>
+          <button class="btn btn-sm" type="button" data-action="toggle-processing-record">${deleteFlow.showRecord ? "收起处理记录" : "查看处理记录"}</button>
+        </div>
+      ` : `<div class="callout callout-error"><strong>用户状态：正常</strong>当前用户未删除，已完成步骤不会重复执行；处理后可从失败步骤重试。</div>
+        <div class="record-actions"><button class="btn btn-sm" type="button" data-action="toggle-processing-record">${deleteFlow.showRecord ? "收起处理记录" : "查看处理记录"}</button></div>
+        ${deleteFlow.showRecord ? `<div class="record-panel">
+          <div class="record-line"><b>操作人：</b>当前管理员</div>
+          <div class="record-line"><b>操作时间：</b>${escapeHtml(completedAt)}</div>
+          <div class="record-line"><b>删除用户：</b>${escapeHtml(target.name)}（${escapeHtml(target.account)}）</div>
+          <div class="record-line"><b>已处理步骤：</b>${escapeHtml((task ? task.steps.filter((step) => step.status === "done").map((step) => step.label).join("、") : "") || "无")}</div>
+          <div class="record-line"><b>执行异常：</b>${escapeHtml((task && task.steps.find((step) => step.status === "failed") || {}).error || "无")}</div>
+        </div>` : ""}`}`;
+  }
+
+  function renderDeleteWizard() {
+    const user = activeDeleteUser();
+    if (!user) return;
+    document.getElementById("wizard-steps").innerHTML = wizardStepMarkup();
+    const body = document.getElementById("wizard-body");
+    const foot = document.getElementById("wizard-foot");
+    if (deleteFlow.renderStep !== deleteFlow.step) {
+      body.scrollTop = 0;
+      deleteFlow.renderStep = deleteFlow.step;
+    }
+    const titles = {
+      impact: ["删除用户", "先确认该用户影响的资源和审批"],
+      transfer: ["资源与审批处理", "批量或逐项选择接收人，审批由系统驳回"],
+      confirm: ["最终确认", "核对摘要并输入账号确认"],
+      result: ["处理结果", "本次删除任务的执行结果"],
+    };
+    const title = titles[deleteFlow.step] || titles.impact;
+    document.getElementById("wizard-title").textContent = title[0];
+    document.getElementById("wizard-subtitle").textContent = title[1];
+
+    if (deleteFlow.step === "impact") body.innerHTML = impactMarkup(user);
+    if (deleteFlow.step === "transfer") body.innerHTML = transferMarkup(user);
+    if (deleteFlow.step === "confirm") body.innerHTML = confirmMarkup(user);
+    if (deleteFlow.step === "result") body.innerHTML = resultMarkup(user);
+
+    if (deleteFlow.step === "confirm") {
+      const input = document.getElementById("delete-confirm-input");
+      if (input && document.activeElement !== input) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }
+
+    if (deleteFlow.step === "result") {
+      const success = deleteFlow.task && deleteFlow.task.status === "success";
+      foot.innerHTML = success
+        ? '<div class="foot-right"><button class="btn" type="button" data-action="close-delete-flow">关闭</button><button class="btn btn-primary" type="button" data-action="back-to-users">返回用户列表</button></div>'
+        : '<button class="btn" type="button" data-action="close-delete-flow">稍后处理</button><div class="foot-right"><button class="btn" type="button" data-action="flow-back">返回资源与审批</button><button class="btn btn-primary" type="button" data-action="flow-retry">重试失败步骤</button></div>';
+      return;
+    }
+
+    const back = deleteFlow.step === "impact" ? "" : '<button class="btn" type="button" data-action="flow-back">上一步</button>';
+    const next = deleteFlow.step === "impact"
+      ? '<button class="btn btn-primary" type="button" data-action="flow-next">下一步：处理资源与审批</button>'
+      : deleteFlow.step === "transfer"
+        ? '<button class="btn btn-primary" type="button" data-action="flow-next">下一步：最终确认</button>'
+        : `<button class="btn btn-danger-solid" type="button" data-action="flow-execute" ${deleteFlow.confirmText === user.account ? "" : "disabled"}>确认删除用户</button>`;
+    foot.innerHTML = `<button class="btn" type="button" data-action="close-delete-flow">取消</button><div class="foot-right">${back}${next}</div>`;
+  }
+
+  function setDeleteMode(mode) {
+    deleteFlow.mode = mode;
+  }
+
+  function setConfirmText(value) {
+    deleteFlow.confirmText = value;
+  }
+
+  function flowNext() {
+    const user = activeDeleteUser();
+    if (!user) return;
+    if (deleteFlow.step === "impact") {
+      deleteFlow.step = "transfer";
+      deleteFlow.error = "";
+      renderDeleteWizard();
+      return;
+    }
+    if (deleteFlow.step === "transfer") {
+      const check = UserDeleteCore.validateAssignments(ownedResourcesOf(user.id), deleteFlow.assignments, users, user.id);
+      if (!check.valid) {
+        deleteFlow.error = "请为所有资源选择符合条件的新所有者";
+        renderDeleteWizard();
+        return;
+      }
+      deleteFlow.error = "";
+      deleteFlow.step = "confirm";
+      renderDeleteWizard();
+    }
+  }
+
+  function flowBack() {
+    if (deleteFlow.step === "transfer") deleteFlow.step = "impact";
+    else if (deleteFlow.step === "confirm") deleteFlow.step = "transfer";
+    else if (deleteFlow.step === "result") deleteFlow.step = deleteFlow.task && deleteFlow.task.failedStep === "transfer" ? "transfer" : "confirm";
+    deleteFlow.error = "";
+    renderDeleteWizard();
+  }
+
+  function syncTransferSelection() {
+    const owned = ownedResourcesOf(deleteFlow.userId);
+    const count = deleteFlow.selectedResourceIds.size;
+    const countEl = document.querySelector("[data-batch-count]");
+    if (countEl) countEl.textContent = String(count);
+    const all = document.getElementById("resource-select-all");
+    if (all) {
+      all.checked = owned.length > 0 && count === owned.length;
+      all.indeterminate = count > 0 && count < owned.length;
+    }
+    const button = document.querySelector('[data-action="apply-batch-assignee"]');
+    if (button) button.disabled = !(count && deleteFlow.batchAssignee);
+    owned.forEach((resource) => {
+      const row = document.querySelector(`[data-resource-row="${resource.id}"]`);
+      if (row) row.classList.toggle("is-selected", deleteFlow.selectedResourceIds.has(resource.id));
+    });
+  }
+
+  function applyBatchAssignee() {
+    const user = activeDeleteUser();
+    if (!user) return;
+    const ids = Array.from(deleteFlow.selectedResourceIds);
+    const assignee = users.find((item) => item.id === deleteFlow.batchAssignee);
+    if (!ids.length || !assignee) {
+      toast("请先选择资源和接收人", "error");
+      return;
+    }
+    ids.forEach((resourceId) => {
+      deleteFlow.assignments[resourceId] = assignee.id;
+      deleteFlow.assignmentSource[resourceId] = "batch";
+    });
+    deleteFlow.batchApplied = true;
+    deleteFlow.selectedResourceIds = new Set();
+    deleteFlow.error = "";
+    toast(`已将 ${ids.length} 项资源批量转让给${assignee.name}`);
+    renderDeleteWizard();
+  }
+
+  function executeDeleteFlow(mode) {
+    const user = activeDeleteUser();
+    if (!user) return;
+    if (deleteFlow.confirmText !== user.account) {
+      deleteFlow.error = "请输入正确的账号后再删除";
+      renderDeleteWizard();
+      return;
+    }
+    const retry = mode === "retry";
+    const task = UserDeleteCore.executeDeletion({
+      resources: ownedResourcesOf(user.id),
+      assignments: deleteFlow.assignments,
+      approvals: deleteApprovals,
+      users,
+      targetUserId: user.id,
+      mode: retry ? "retry" : deleteFlow.mode,
+      retry,
+      resumeFrom: deleteFlow.retryStep,
+    });
+    deleteFlow.task = task;
+    deleteFlow.step = "result";
+    deleteFlow.error = "";
+    if (task.status === "success") {
+      deleteFlow.retryStep = "";
+      ownedResourcesOf(user.id).forEach((resource) => {
+        const stored = deleteResources.find((item) => item.id === resource.id);
+        if (stored && deleteFlow.assignments[resource.id]) stored.ownerId = deleteFlow.assignments[resource.id];
+      });
+      users = users.filter((item) => item.id !== user.id);
+      state.selectedUserIds.delete(user.id);
+      renderUsers();
+      renderMainTree();
+      if (state.page === "user-detail") renderUserDetail();
+    } else {
+      deleteFlow.retryStep = task.failedStep;
+    }
+    renderDeleteWizard();
+  }
+
+  function handleDeleteAction(action) {
+    if (action === "open-delete-flow") openDeleteFlow();
+    else if (action === "close-delete-flow") closeDeleteFlow();
+    else if (action === "flow-next") flowNext();
+    else if (action === "flow-back") flowBack();
+    else if (action === "flow-execute") executeDeleteFlow();
+    else if (action === "flow-retry") executeDeleteFlow("retry");
+    else if (action === "apply-batch-assignee") applyBatchAssignee();
+    else if (action === "back-to-users") { closeDeleteFlow(); backToUsers(); }
+    else if (action === "back-to-list") backToUsers();
+    else if (action === "edit-detail-user") { if (detailUser()) openUserForm(detailUser().id); }
+    else if (action === "show-fallback-resource") { deleteFlow.showFallback = !deleteFlow.showFallback; renderDeleteWizard(); }
+    else if (action === "toggle-processing-record") { deleteFlow.showRecord = !deleteFlow.showRecord; renderDeleteWizard(); }
+  }
+
+  document.addEventListener("click", (event) => {
+    const trigger = event.target.closest("[data-action]");
+    if (!trigger) return;
+    handleDeleteAction(trigger.dataset.action);
+  });
+
+  document.addEventListener("change", (event) => {
+    const check = event.target.closest("[data-resource-check]");
+    if (check) {
+      if (check.checked) deleteFlow.selectedResourceIds.add(check.dataset.resourceCheck);
+      else deleteFlow.selectedResourceIds.delete(check.dataset.resourceCheck);
+      syncTransferSelection();
+      return;
+    }
+    if (event.target.id === "resource-select-all") {
+      const owned = ownedResourcesOf(deleteFlow.userId);
+      deleteFlow.selectedResourceIds = event.target.checked ? new Set(owned.map((resource) => resource.id)) : new Set();
+      syncTransferSelection();
+      return;
+    }
+    if (event.target.id === "batch-assignee") {
+      deleteFlow.batchAssignee = event.target.value;
+      syncTransferSelection();
+      return;
+    }
+    const select = event.target.closest("[data-resource-id]");
+    if (select) {
+      const resourceId = select.dataset.resourceId;
+      deleteFlow.assignments[resourceId] = select.value;
+      deleteFlow.assignmentSource[resourceId] = select.value ? "single" : "";
+      if (deleteFlow.error) {
+        deleteFlow.error = "";
+        const errorBox = document.querySelector("#wizard-body .callout-error");
+        if (errorBox) errorBox.remove();
+      }
+      const row = select.closest("tr");
+      const statusCell = row ? row.querySelector(".row-status") : null;
+      if (statusCell) {
+        const singleHint = select.value && deleteFlow.batchApplied ? '<div class="assignment-source" data-assignment-source="single">已使用单独配置</div>' : "";
+        statusCell.innerHTML = select.value
+          ? `<span class="state-tag state-active">已配置</span>${singleHint}`
+          : '<span class="state-tag state-warning">待处理</span>';
+      }
+      const counter = document.querySelector("[data-assign-counter]");
+      if (counter) {
+        const owned = ownedResourcesOf(deleteFlow.userId);
+        const configured = owned.filter((resource) => deleteFlow.assignments[resource.id]).length;
+        counter.textContent = `已配置 ${configured} / ${owned.length}`;
+      }
+      return;
+    }
+    if (event.target.id === "delete-mode") setDeleteMode(event.target.value);
+  });
+
+  document.addEventListener("input", (event) => {
+    if (event.target.id !== "delete-confirm-input") return;
+    setConfirmText(event.target.value);
+    const user = activeDeleteUser();
+    const button = document.querySelector('#wizard-foot [data-action="flow-execute"]');
+    const hint = document.querySelector(".confirm-hint");
+    const matches = user && deleteFlow.confirmText === user.account;
+    if (button) button.disabled = !matches;
+    if (hint) {
+      hint.textContent = matches ? "账号匹配，可以继续删除。" : deleteFlow.confirmText ? "账号不匹配，请重新输入。" : "输入账号后才可启用删除按钮。";
+      hint.className = "confirm-hint " + (matches ? "ok" : deleteFlow.confirmText ? "bad" : "");
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const wizard = document.getElementById("delete-wizard");
+    if (event.key === "Escape" && wizard && wizard.classList.contains("show")) {
+      event.preventDefault();
+      closeDeleteFlow();
+      return;
+    }
+    if (event.target.id === "delete-confirm-input" && event.key === "Enter") {
+      event.preventDefault();
+      const user = activeDeleteUser();
+      if (user && deleteFlow.confirmText === user.account) toast("请点击“确认删除用户”完成操作", "info");
+    }
+  });
+
+  window.UserDeletePOC = {
+    openUserDetail,
+    openDeleteFlow,
+    flowNext,
+    flowBack,
+    setConfirmText,
+    setDeleteMode,
+    applyBatchAssignee,
+    executeDeleteFlow,
+    handleDeleteAction,
+    getState: () => ({
+      step: deleteFlow.step,
+      assignments: Object.assign({}, deleteFlow.assignments),
+      assignmentSource: Object.assign({}, deleteFlow.assignmentSource),
+      selectedResourceIds: Array.from(deleteFlow.selectedResourceIds),
+      task: deleteFlow.task,
+      userId: deleteFlow.userId,
+    }),
+  };
 
   // ——— Init ———
   renderMainTree();
