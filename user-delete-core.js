@@ -34,6 +34,14 @@
     log: '处理记录生成失败，用户暂未删除',
   };
 
+  const FAILURE_TITLE = {
+    validate: '资源接收人校验未通过',
+    transfer: '资源转让失败',
+    approval: '审批驳回失败',
+    delete: '注销用户失败',
+    log: '处理记录生成失败',
+  };
+
   function isDeletedUser(user) {
     return !user || user.deleted === true || user.status === 'deleted';
   }
@@ -98,7 +106,10 @@
       { id: 'ap-agent-add', name: 'Agent 变更审批', reference: '加签人', referenceType: '加签人', node: '加签中' },
       { id: 'ap-kb-delegate', name: '知识库授权审批', reference: '代理人', referenceType: '代理人', node: '代理处理中' },
       { id: 'ap-drawing-final', name: '图纸终审发布', reference: '最终发布人', referenceType: '最终发布人', node: '待发布' },
-    ];
+    ].map((approval) => Object.assign({}, approval, {
+      option: '驳回',
+      rejectionReason: REJECTION_REASON,
+    }));
   }
 
   function summarizeApprovals(approvals) {
@@ -110,6 +121,15 @@
       counts[type] = (counts[type] || 0) + 1;
     });
     return order.map((type) => ({ type: type, count: counts[type] }));
+  }
+
+  function applyBatchAssignment(resources, assignments, resourceIds, assigneeId) {
+    const next = Object.assign({}, assignments || {});
+    const selected = new Set(resourceIds || []);
+    (resources || []).forEach((resource) => {
+      if (selected.has(resource.id)) next[resource.id] = assigneeId;
+    });
+    return next;
   }
 
   function executeDeletion(options) {
@@ -138,6 +158,7 @@
     });
 
     const success = failedIndex === -1;
+    const failureKeyForResult = success ? '' : failureKey;
     return {
       taskId: 'UD-' + Date.now().toString(36).toUpperCase(),
       status: success ? 'success' : 'failed',
@@ -146,7 +167,11 @@
       rejectionReason: REJECTION_REASON,
       resourceCount: resources.length,
       approvalCount: approvals.length,
-      failedStep: success ? '' : failureKey,
+      resourcesTransferred: success ? resources.length : 0,
+      approvalsRejected: success ? approvals.length : 0,
+      failedStep: failureKeyForResult,
+      errorTitle: success ? '' : FAILURE_TITLE[failureKeyForResult],
+      error: success ? '' : FAILURE_MESSAGE[failureKeyForResult],
       retried: isRetry,
       completedAt: new Date().toISOString(),
       transfers: resources.map((resource) => ({
@@ -155,6 +180,11 @@
         type: resource.type || '',
         assigneeId: assignments[resource.id] || '',
       })),
+      records: success ? [
+        { key: 'transfer', label: '资源所有权', detail: resources.length + ' 项已转移' },
+        { key: 'approval', label: '未结束审批', detail: approvals.length + ' 条已驳回 · ' + REJECTION_REASON },
+        { key: 'delete', label: '账号注销', detail: '已完成' },
+      ] : [],
       mode,
     };
   }
@@ -198,6 +228,7 @@
     summarizeAssignments,
     createApprovals,
     summarizeApprovals,
+    applyBatchAssignment,
     executeDeletion,
     resolveUserDisplay,
     resolveResourceOwner,

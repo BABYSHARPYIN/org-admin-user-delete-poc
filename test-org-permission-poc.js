@@ -1,48 +1,38 @@
-const fs = require('fs');
-const path = require('path');
-const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+const fs = require("fs");
+const path = require("path");
+const vm = require("vm");
 
-if (html.includes('data-page="roles"')) throw new Error('role management navigation should be removed');
-if (html.includes('id="page-roles"')) throw new Error('role management page should be removed');
-if (html.includes('已含下级筛选（选中即生效）')) throw new Error('descriptive filter menu should be removed');
-if (html.includes('data-action="batch-grant"')) throw new Error('batch grant must not be exposed from organization tree');
-if (html.includes('data-action="batch-revoke"')) throw new Error('batch revoke must not be exposed from organization tree');
-if (!html.includes('id="btn-batch-actions"')) throw new Error('batch actions menu trigger is missing');
-if (!html.includes('data-batch-action="grant"')) throw new Error('batch grant submenu item is missing');
-if (!html.includes('data-batch-action="revoke"')) throw new Error('batch revoke submenu item is missing');
-if (!html.includes('data-batch-action="transfer"')) throw new Error('batch transfer submenu item is missing');
-if (html.includes('id="btn-batch-grant"')) throw new Error('batch grant should be inside the batch actions menu');
-if (html.includes('id="btn-batch-revoke"')) throw new Error('batch revoke should be inside the batch actions menu');
-if (html.includes('id="btn-batch-transfer"')) throw new Error('batch transfer should be inside the batch actions menu');
-if (html.includes('id="batch-members"') || html.includes('id="batch-select-all"')) throw new Error('batch role modal should not render a user list');
-if (html.includes('renderBatchMembers')) throw new Error('batch role modal should not render selected user details');
-if (!html.includes('selectedBatchUsers()')) throw new Error('batch operations must use users selected in the user table');
-if (!html.includes('id="batch-selected-user-count"')) throw new Error('selected user summary is missing');
-if (!html.includes('id="user-select-all"')) throw new Error('user table select-all control is missing');
-if (!html.includes('id="user-selection-bar"')) throw new Error('user table selection bar is missing');
-if (html.includes('id="btn-batch-position"')) throw new Error('legacy batch position action should be replaced');
-if (!html.includes('data-batch-action="transfer"')) throw new Error('batch transfer submenu action is missing');
-if (!html.includes('id="modal-position-migration"')) throw new Error('batch transfer modal is missing');
-if (html.includes('id="default-position-select"')) throw new Error('legacy default position compatibility control should be removed');
-if (html.includes('DEFAULT_POSITION_ID')) throw new Error('legacy default position compatibility state should be removed');
-if (html.includes('POSITION_STORAGE_KEY')) throw new Error('legacy default position storage should be removed');
-if (html.includes('positionCompatibility')) throw new Error('legacy position compatibility state should be removed');
-if (!html.includes('批量转岗')) throw new Error('batch transfer copy is missing');
-if (!html.includes('id="btn-add-kb-member-single"')) throw new Error('single resource member entry is missing');
-if (!html.includes('id="btn-add-kb-member-org"')) throw new Error('organization resource member entry is missing');
-if (!html.includes('const tr = document.createElement("tr")')) throw new Error('user table row must be created before rendering');
-if ((html.match(/<section class="page/g) || []).length !== 3) throw new Error('expected three page sections');
-if ((html.match(/<\/section>/g) || []).length !== 3) throw new Error('page sections should have balanced closing tags');
-if (!html.includes('id="modal-kb-members"')) throw new Error('organization resource member modal is missing');
-if (html.includes('id="kb-member-query"')) throw new Error('organization resource entry should not have a user search box');
-if (html.includes('state.kbMemberQuery')) throw new Error('organization resource entry should not keep user search state');
-if (!html.includes('if (!state.kbOrgId) return [];')) throw new Error('organization members should stay hidden before an organization is selected');
-if (!html.includes('empty.textContent = "请输入搜索关键词"')) throw new Error('single member details should stay hidden before search');
-if (!html.includes('不能回收用户的全部角色，请先为')) throw new Error('revoke fallback validation is missing');
-if (html.includes('user.roleIds = ["r-user"]')) throw new Error('revoke must not auto-assign a fallback role');
+const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
 
-const readme = fs.readFileSync('/Users/rio/Desktop/零散文件/org-admin-poc/README.md', 'utf8');
-if (readme.includes('旧用户岗位兼容') || readme.includes('默认岗位迁移方案')) throw new Error('README should not describe legacy user compatibility');
-if (readme.includes('已有用户默认岗位') || readme.includes('默认岗位迁移方案')) throw new Error('README should not describe legacy user compatibility');
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
 
-console.log('organization authorization and resource entry smoke test passed');
+assert(
+  html.includes('const KB_ROLE_LABEL = { owner: "所有者", editor: "编辑者", viewer: "使用者" }'),
+  "KB role labels should be 所有者 / 编辑者 / 使用者"
+);
+assert(
+  html.includes('const KB_ASSIGNABLE_ROLES = { editor: "编辑者", viewer: "使用者" }'),
+  "only 编辑者 and 使用者 should be assignable knowledge-base roles"
+);
+assert(!html.includes("查看者"), "知识库角色「查看者」应改为「使用者」");
+assert(!html.includes('<option value="admin">'), "knowledge-base auth select should not offer 管理员");
+assert(!html.includes('<option value="owner">'), "所有者 should not be a freely assignable option");
+assert(!html.includes('role: "admin"'), "demo knowledge-base bindings should not use the admin resource role");
+assert(!html.includes('organizationRoleId: "kb-001-admin"'), "demo bindings should not keep the admin resource role id");
+assert(html.includes('role: "owner"'), "demo data should include a default owner member");
+assert(html.includes("张三"), "default owner demo member should remain 张三");
+assert(html.includes('class="owner-badge">所有者</span>'), "owner role should render as a fixed badge");
+assert(html.includes("所有者由创建者固定担任，不能移除"), "removing the owner should be blocked");
+assert(html.includes('name: "管理员"'), "feature role 管理员 should stay");
+assert(html.includes('role: "editor"'), "editor demo binding should remain");
+assert(html.includes('role: "viewer"'), "viewer value should remain the lowest-privilege read role");
+assert(html.includes('return ["kb:read"]'), "使用者 should keep the viewer read scope");
+assert(!/role === "admin" \? \["kb:read"/.test(html), "admin resource role should not have a scope mapping");
+
+const script = html.match(/<script>\s*([\s\S]*?)<\/script>\s*<\/body>/);
+assert(script, "page script should be extractable");
+new vm.Script(script[1], { filename: "index.html" });
+
+console.log("knowledge-base resource role smoke test passed");
