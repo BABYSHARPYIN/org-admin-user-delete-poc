@@ -1,8 +1,6 @@
 # 用户删除流程 POC
 
-独立的组织与用户管理原型，重点演示用户删除前的影响检查、资源所有权转让、未结束审批处理、账号二次确认、失败重试和删除后的资源查询兜底。
-
-本项目独立于 `org-admin-poc`，不会修改原仓库或原有 GitHub Pages 页面。
+在 `org-admin-poc` 的用户列表与用户信息抽屉基础上，演示用户删除的多步向导：影响检查、资源转移/审批驳回、输入账号确认。
 
 ## 在线页面
 
@@ -18,38 +16,43 @@ python3 -m http.server 4180 --directory "/Users/rio/Desktop/零散文件/org-adm
 
 访问 <http://localhost:4180/>。
 
-## POC 流程
+页面结构、导航、列表和抽屉基于 `org-admin-poc` 的 `gh-pages`；删除向导和对应样式在此基础上新增。
 
-删除入口位于用户列表和用户详情页，向导包含三步：
+## 删除流程
+
+用户列表「查看」打开用户信息抽屉 → 点击「删除」进入三步向导：
 
 1. **影响检查**：展示用户作为所有者的资源，以及用户参与的未结束审批。
-2. **资源与审批处理**：资源支持逐项配置，也支持勾选多项后批量转让给同一位接收人；单项修改可以覆盖批量配置。审批不转交，由系统统一驳回，原因固定为“该用户已注销”。
-3. **最终确认**：展示资源和审批摘要，要求输入待删除用户账号后才能执行。
+2. **资源转移与审批**：资源逐项选择接收人，或勾选后批量转让；审批不转交，统一由系统以「该用户已注销」驳回。
+3. **输入账号确认**：输入完整账号后才能点击「确认删除」，按 Enter 不会提交。
 
-接收人必须同时满足：账号状态正常、拥有“管理员”或“子管理员”角色、不是待删除用户。编辑权和使用权不进入转让列表。
+接收人必须状态正常、拥有管理员或子管理员角色，且不能是待删除用户。资源转移只处理所有者资源；编辑权等共享关系不进入转让列表。
 
-审批示例覆盖待办节点、审批中节点、发起人、抄送人、会签人、加签人、代理人和最终发布人等用户引用。删除后资源仍可查询，缺失用户信息使用“已删除用户”（`user_id = -1`）展示，占位身份不参与实时权限判断。
-
-POC 还提供资源转让失败、审批处理失败、用户注销失败、成功重试和处理记录查看等演示分支。
+向导顶部可切换正常完成、资源转让失败、审批失败、删除失败四种演示路径。失败时用户保持正常状态，可从失败步骤重试。删除成功后，缺失用户的资源统一显示为「已删除用户」，`user_id = -1`，占位身份不参与实时权限判断。
 
 ## 文件说明
 
 - `index.html`：离线页面、样式和交互逻辑。
 - `user-delete-core.js`：可在浏览器和 Node.js 中复用的删除流程核心校验。
-- `test-user-delete-flow.js`：删除流程核心及页面结构测试。
-- `test-org-permission-poc.js`：组织与知识库权限示例的冒烟测试。
+- `test-user-delete-flow.js`：删除流程核心与页面结构测试。
+- `test-user-list-static.js`：不依赖浏览器的用户列表与抽屉静态回归测试。
+- `test-user-list.js`：从 `org-admin-poc` 带入的用户列表测试；其浏览器验收部分不用于本次验收。
+- `test-org-permission-poc.js`：从 `org-admin-poc` 带入的知识库权限测试；该源文件在 `gh-pages` 上已与页面实现不一致。
 
 ## 运行检查
 
 ```bash
 node --check user-delete-core.js
+node --check test-user-delete-flow.js
+node --check test-user-list-static.js
 node test-user-delete-flow.js
-node test-org-permission-poc.js
+node test-user-list-static.js
 python3 - <<'PY'
 import re
-html = open('index.html', encoding='utf-8').read()
-script = re.findall(r'<script>(.*?)</script>', html, re.S)[-1]
-open('/tmp/org-admin-user-delete-poc-inline.js', 'w', encoding='utf-8').write(script)
+from pathlib import Path
+html = Path('index.html').read_text()
+script = re.findall(r'<script>\s*(.*?)</script>\s*</body>', html, re.S)[-1]
+Path('/tmp/org-admin-user-delete-poc-inline.js').write_text(script)
 PY
 node --check /tmp/org-admin-user-delete-poc-inline.js
 git diff --check
