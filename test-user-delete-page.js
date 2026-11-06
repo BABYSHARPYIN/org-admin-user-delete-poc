@@ -70,7 +70,7 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
     }));
   }
   // Register actual static controls and their IDs; renderers populate their own children.
-  for (const match of html.matchAll(/<([a-z][\w-]*)\b([^>]*)>/g)) {
+  for (const match of html.split('<script')[0].matchAll(/<([a-z][\w-]*)\b([^>]*)>/g)) {
     if (/\bid="|\bdata-|class="[^"]*(?:modal-mask|nav-item|delete-body)|name="kb-vis"/.test(match[2])) new Element(match[1], match[2]);
   }
   const document = {
@@ -99,7 +99,7 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   page.assign();
   page.input('zhangwei');
   page.get('btn-delete-account-confirm').click();
-  assert(page.get('delete-result').classList.contains('show'), 'deletion must remain usable with the previous core interface');
+  assert(!page.get('delete-wizard').classList.contains('show'), 'successful deletion must close the dialog with the previous core interface');
 }
 
 {
@@ -119,13 +119,14 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   assert(page.get('delete-account-input').dispatch('keydown', { key: 'Enter' }).prevented, 'Enter must be prevented');
   assert.equal(page.get('delete-result').classList.contains('show'), false);
   page.get('btn-delete-account-confirm').click();
-  assert(page.get('delete-result').classList.contains('show'));
+  assert(!page.get('delete-wizard').classList.contains('show'), 'successful deletion must close the dialog');
   assert.equal(page.get('kb-owner-name').textContent, '李娜', 'success must update displayed owner');
   assert.equal(page.select('[data-view]').some((button) => button.dataset.view === 'u1'), false, 'deleted user must leave list');
   assert.match(page.get('delete-result-approval-fallback').textContent, /回退待审核/);
   assert.match(page.get('delete-result-approval-fallback').textContent, /自动驳回/);
   assert.match(page.get('delete-result-approval-fallback').textContent, /未知用户/);
-  assert(page.get('btn-delete-account-confirm').disabled, 'completed deletion must not execute again');
+  page.get('btn-delete-account-confirm').click();
+  assert(!page.get('delete-wizard').classList.contains('show'), 'repeated confirmation must keep the dialog closed');
   page.openUser('u2');
   assert.equal(page.select('[data-assign-resource]').length, 2, 'recipient must now own transferred resources');
   assert.equal(page.select('[data-assign-approval]').length, 2, 'recipient must now receive transferred approvals');
@@ -146,7 +147,7 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   assert(page.get('btn-delete-account-confirm').disabled, 'current approval must have a recipient');
   page.change(page.select('[data-assign-approval]')[0], 'u2');
   page.get('btn-delete-account-confirm').click();
-  assert(page.get('delete-result').classList.contains('show'), 'resources plus current approval should allow deletion without historical recipients');
+  assert(!page.get('delete-wizard').classList.contains('show'), 'resources plus current approval should complete deletion and close the dialog');
   assert.equal(page.get('delete-result-approvals').textContent, '1 条当前节点已转让');
   page.openUser('u2');
   assert.deepEqual(page.select('[data-assign-approval]').map((item) => item.dataset.assignApproval), ['current', 'unrelated'], 'each current unfinished node referencing the selected user must be available regardless of assignee');

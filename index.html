@@ -1113,6 +1113,8 @@ table.data tr:hover td { background: #fafafa; }
   padding: 0;
 }
 .link-danger:hover { color: var(--danger-hover); }
+.link-danger.link-transfer { color: var(--link); }
+.link-danger.link-transfer:hover { color: var(--link-hover); }
 .kb-role-select { max-width: 130px; }
 
 
@@ -1121,7 +1123,8 @@ table.data tr:hover td { background: #fafafa; }
 }
 .kb-org-search { width: 100%; margin: 8px 0; }
 .modal-subtitle { margin-top: 3px; color: var(--text-tertiary); font-size: 12px; }
-.kb-member-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.kb-member-toolbar { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; margin-bottom: 12px; }
+.kb-member-toolbar > .btn { margin-left: auto; flex-shrink: 0; }
 .kb-member-query-box { flex: 1; }
 .kb-selected-count { color: var(--primary); font-size: 12px; white-space: nowrap; }
 .kb-member-picker-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; }
@@ -1495,7 +1498,6 @@ table.data tr:hover td { background: #fafafa; }
               </div>
               <div class="kb-section-head">
                 <h1>测试知识库</h1>
-                <button class="btn" type="button" id="btn-transfer-kb-owner">转移所有者</button>
               </div>
               <p class="delete-final-warning">所有者：<strong id="kb-owner-name"></strong></p>
               <div class="kb-meta">
@@ -2817,11 +2819,14 @@ table.data tr:hover td { background: #fafafa; }
             <option value="viewer" ${row.role === "viewer" ? "selected" : ""}>使用者</option>
           </select>`;
       const action = row.locked
-        ? "—"
+        ? `<button class="link-danger link-transfer" type="button" id="btn-transfer-kb-owner">转移所有者</button>`
         : `<button class="link-danger" type="button" data-remove-kind="${row.kind}" data-remove-id="${escapeHtml(row.id)}">移除</button>`;
       return `<tr><td>${member}</td><td>${escapeHtml(row.orgInfo)}</td><td>${roleCell}</td><td>${action}</td></tr>`;
     }).join("") : `<tr><td colspan="4" class="muted">暂无数据</td></tr>`;
 
+    tbody.querySelectorAll("#btn-transfer-kb-owner").forEach((btn) => {
+      btn.addEventListener("click", openKbOwnerTransfer);
+    });
     tbody.querySelectorAll(".kb-role-select").forEach((sel) => {
       sel.addEventListener("change", () => {
         if (sel.dataset.kind === "org") {
@@ -3071,8 +3076,6 @@ table.data tr:hover td { background: #fafafa; }
       const candidateIndex = kbCandidateUsers.findIndex((candidate) => candidate.account === user.account);
       if (candidateIndex >= 0) kbCandidateUsers.splice(candidateIndex, 1);
       document.getElementById("delete-failure").hidden = true;
-      document.getElementById("delete-result").classList.add("show");
-      document.getElementById("delete-task-id").textContent = result.taskId;
       document.getElementById("delete-result-transfers").textContent = result.resourcesTransferred + " 项已转移";
       document.getElementById("delete-result-approvals").textContent = result.approvalsTransferred + " 条当前节点已转让";
       document.getElementById("delete-result-approval-fallback").textContent = result.approvalFallbackSummary || "无历史节点需要兜底";
@@ -3080,11 +3083,7 @@ table.data tr:hover td { background: #fafafa; }
       document.getElementById("delete-result-fallback").textContent = fallback.name + " · user_id = " + fallback.userId;
       document.getElementById("delete-record-list").innerHTML = result.records.map((record) =>
         '<div class="record-row"><span>' + escapeHtml(record.label) + '</span><span>' + escapeHtml(record.detail) + '</span></div>').join("");
-      document.getElementById("btn-view-last-record").classList.add("show");
-      document.getElementById("delete-account-input").disabled = true;
-      document.getElementById("delete-footer-note").textContent = "删除完成 · 账号已注销";
-      renderDeleteAssignments();
-      syncDeleteConfirmButton();
+      closeModal("delete-wizard");
       toast("已删除用户 " + user.name);
       renderUsers();
       renderMainTree();
@@ -3123,7 +3122,6 @@ table.data tr:hover td { background: #fafafa; }
     openModal("modal-kb-owner-transfer");
   }
 
-  document.getElementById("btn-transfer-kb-owner").addEventListener("click", openKbOwnerTransfer);
   function renderKbOwnerCandidates(excludedId, query) {
     const q = (query || "").trim().toLowerCase();
     const candidates = deleteCore().getTransferCandidates(users, excludedId).filter((user) =>
