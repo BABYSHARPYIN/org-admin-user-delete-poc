@@ -160,11 +160,17 @@ test('delete gate requires exact nonempty account and all handoffs', () => {
   assert(!core.canDelete(Object.assign({}, request, { assignments: {} })), 'missing resource receiver must disable deletion');
   assert(!core.canDelete({}), 'missing target cannot pass confirmation');
   assert(!core.canDelete(Object.assign({}, request, { account: 'spoofed', accountInput: 'spoofed' })), 'gate must derive the account from target');
+  const deletedUsers = users.map((user) => user.id === 'u1' ? Object.assign({}, user, { status: 'deleted', deleted: true }) : user);
+  assert(!core.canDelete(Object.assign({}, request, { users: deletedUsers })), 'deleted target must not be deleted again');
+  assert(!core.canDelete(Object.assign({}, request, { users: users.map((user) => user.id === 'u1' ? Object.assign({}, user, { status: 'disabled' }) : user) })), 'inactive target must not be deleted');
 });
 
 test('execution revalidates account, recipients and target even on retry', () => {
   const invalidAccount = runDeletion('success', { accountInput: 'wrong' });
   assert(invalidAccount.status === 'failed' && invalidAccount.transfers.length === 0 && invalidAccount.approvalTransfers.length === 0, 'invalid account must not publish completed transfers');
+  assert(invalidAccount.error.includes('账号输入') || invalidAccount.error.includes('账号'), 'invalid account should explain the account mismatch');
+  const deletedTarget = runDeletion('success', { users: users.map((user) => user.id === 'u1' ? Object.assign({}, user, { status: 'deleted', deleted: true }) : user) });
+  assert(deletedTarget.status === 'failed' && deletedTarget.userStatus === 'active', 'deleted target must fail closed');
   const invalidRetry = runDeletion('failure', { retry: true, approvalAssignments: {} });
   assert(invalidRetry.status === 'failed' && invalidRetry.userStatus === 'active', 'retry must revalidate handoffs');
   assert(runDeletion('unsupported-mode').status === 'failed', 'unsupported scenario must fail closed');

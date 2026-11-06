@@ -95,7 +95,7 @@
     const config = options || {};
     const validation = validateHandoffs(config.resources || [], config.assignments || {}, config.approvals || [], config.approvalAssignments || {}, config.users || [], config.targetUserId);
     const target = (config.users || []).find((user) => user.id === config.targetUserId);
-    return !!target && validation.valid && config.accountInput === target.account;
+    return !!target && target.status === 'active' && !isDeletedUser(target) && validation.valid && config.accountInput === target.account;
   }
 
   function transferOwnership(options) {
@@ -120,11 +120,13 @@
     const retry = config.retry === true;
     const validation = validateHandoffs(resources, assignments, approvals, approvalAssignments, users, targetUserId);
     const target = users.find((user) => user.id === targetUserId);
-    const valid = validation.valid && !!target && config.accountInput === target.account;
+    const targetActive = !!target && target.status === 'active' && !isDeletedUser(target);
+    const accountValid = !!target && config.accountInput === target.account;
+    const valid = validation.valid && targetActive && accountValid;
     const recognizedMode = config.mode === 'success' || config.mode === 'failure' || config.mode === 'retry';
     const failed = !retry && (!recognizedMode || config.mode === 'failure');
     const success = valid && !failed || retry && valid;
-    const error = !valid ? '所有资源和审批都需要指定合规接收人，用户暂未删除' : '处理失败，用户保持正常状态，可重试';
+    const error = !targetActive ? '待删除用户状态不是正常，用户暂未删除' : !accountValid ? '账号输入不匹配，用户暂未删除' : !validation.valid ? '所有资源和审批都需要指定合规接收人，用户暂未删除' : '处理失败，用户保持正常状态，可重试';
     return {
       taskId: 'UD-' + Date.now().toString(36).toUpperCase(),
       status: success ? 'success' : 'failed',
