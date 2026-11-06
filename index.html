@@ -1589,13 +1589,6 @@ table.data tr:hover td { background: #fafafa; }
           <div class="delete-user-meta" id="delete-user-meta"></div>
         </div>
         <div class="delete-head-actions">
-          <label class="scenario-control">
-            <span>演示路径</span>
-            <select id="delete-scenario" aria-label="演示路径">
-              <option value="success">成功</option>
-              <option value="failure">失败</option>
-            </select>
-          </label>
           <button class="btn-icon" type="button" data-close="delete-wizard" aria-label="关闭删除处理页">✕</button>
         </div>
       </div>
@@ -1665,9 +1658,6 @@ table.data tr:hover td { background: #fafafa; }
           <select class="input" id="kb-owner-recipient" aria-describedby="kb-owner-transfer-help"></select>
           <p class="delete-final-warning" id="kb-owner-transfer-help">请选择状态正常的管理员或子管理员，不能选择当前所有者。转移后原所有者保留编辑权限。</p>
         </div>
-        <label class="scenario-control">演示路径
-          <select id="kb-owner-scenario"><option value="success">成功</option><option value="failure">失败</option></select>
-        </label>
         <div class="field-error" id="kb-owner-error" role="alert"></div>
       </div>
       <div class="modal-footer">
@@ -1729,7 +1719,7 @@ table.data tr:hover td { background: #fafafa; }
 
   <div class="toast-wrap" id="toast-wrap"></div>
 
-  <script src="user-delete-core.js"></script>
+  <script src="user-delete-core.js?v=20261106"></script>
   <script>
 /* 组织与用户 */
 (function () {
@@ -2000,7 +1990,11 @@ table.data tr:hover td { background: #fafafa; }
     { id: "kb-001", name: "测试知识库", type: "知识库", ownerId: "u1", relation: "owner" },
     { id: "agent-001", name: "售前 Agent", type: "Agent", ownerId: "u1", relation: "owner" },
   ];
-  let demoApprovals = window.UserDeleteCore.createApprovals().concat(window.UserDeleteCore.createApprovalHistory()).map((approval) => Object.assign({ assigneeId: "u1" }, approval));
+  // Older cached core versions may not provide optional approval history.
+  const core = window.UserDeleteCore || {};
+  const createApprovals = typeof core.createApprovals === "function" ? core.createApprovals.bind(core) : () => [];
+  const createApprovalHistory = typeof core.createApprovalHistory === "function" ? core.createApprovalHistory.bind(core) : () => [];
+  let demoApprovals = createApprovals().concat(createApprovalHistory()).map((approval) => Object.assign({ assigneeId: "u1" }, approval));
 
   const PAGE_SIZE = 10;
 
@@ -2957,7 +2951,7 @@ table.data tr:hover td { background: #fafafa; }
       targetUserId: deleteFlow.user.id,
       accountInput: document.getElementById("delete-account-input").value,
       account: deleteFlow.user.account,
-      mode: document.getElementById("delete-scenario").value,
+      mode: "success",
     };
   }
 
@@ -2989,8 +2983,6 @@ table.data tr:hover td { background: #fafafa; }
     const input = document.getElementById("delete-account-input");
     input.value = "";
     input.disabled = false;
-    document.getElementById("delete-scenario").value = "success";
-    document.getElementById("delete-scenario").disabled = false;
     document.getElementById("delete-failure").hidden = true;
     document.getElementById("delete-result").classList.remove("show");
     document.getElementById("btn-view-last-record").classList.remove("show");
@@ -3051,7 +3043,6 @@ table.data tr:hover td { background: #fafafa; }
         '<div class="record-row"><span>' + escapeHtml(record.label) + '</span><span>' + escapeHtml(record.detail) + '</span></div>').join("");
       document.getElementById("btn-view-last-record").classList.add("show");
       document.getElementById("delete-account-input").disabled = true;
-      document.getElementById("delete-scenario").disabled = true;
       document.getElementById("delete-footer-note").textContent = "删除完成 · 账号已注销";
       renderDeleteAssignments();
       syncDeleteConfirmButton();
@@ -3087,7 +3078,6 @@ table.data tr:hover td { background: #fafafa; }
     const kb = demoResources.find((resource) => resource.id === "kb-001");
     document.getElementById("kb-owner-recipient").innerHTML = recipientOptions(kb.ownerId, "");
     document.getElementById("kb-owner-recipient").value = "";
-    document.getElementById("kb-owner-scenario").value = "success";
     document.getElementById("kb-owner-error").classList.remove("show");
     document.getElementById("btn-confirm-kb-owner").disabled = true;
     openModal("modal-kb-owner-transfer");
@@ -3105,7 +3095,7 @@ table.data tr:hover td { background: #fafafa; }
       resource: kb,
       users,
       recipientId: document.getElementById("kb-owner-recipient").value,
-      mode: document.getElementById("kb-owner-scenario").value,
+      mode: "success",
     });
     if (!result.success) {
       document.getElementById("kb-owner-error").textContent = result.error;

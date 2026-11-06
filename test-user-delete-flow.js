@@ -84,11 +84,10 @@ test('resource and approval handoffs are configured item by item', () => {
   assert((index.match(/data-assign-resource/g) || []).length >= 1, 'resource assignment mount is missing');
 });
 
-test('demo data is small and scenarios are only success or failure', () => {
+test('demo data is small and deletion has no selectable demo path', () => {
   assert(core.createApprovals().length >= 1 && core.createApprovals().length <= 2, 'approval demo must contain one or two items');
   assert(!index.includes('value="transfer-failure"') && !index.includes('value="approval-failure"') && !index.includes('value="delete-failure"'), 'detailed failure modes must be removed');
-  const scenario = index.match(/id="delete-scenario"[\s\S]*?<\/select>/);
-  assert(scenario && scenario[0].includes('value="success"') && scenario[0].includes('value="failure"'), 'only success/failure scenarios should be exposed');
+  assert(!index.includes('id="delete-scenario"') && !index.includes('演示路径'), 'deletion must use the default successful path');
   assert(!/批量|分步|步骤|向导进度/.test(index + fs.readFileSync(path.join(root, 'user-delete-core.js'), 'utf8')), 'batch and step wording must be absent');
 });
 

@@ -5,7 +5,7 @@ const vm = require('vm');
 const core = require('./user-delete-core');
 const html = fs.readFileSync(require('path').join(__dirname, 'index.html'), 'utf8');
 
-function loadPage(approvalFixtures) {
+function loadPage(approvalFixtures, coreOverrides = {}) {
   const all = [];
   class Element {
     constructor(tag = 'div', attributes = '') {
@@ -81,7 +81,7 @@ function loadPage(approvalFixtures) {
     createDocumentFragment: () => new Element('fragment'),
   };
   const script = html.match(/<script>\s*([\s\S]*?)<\/script>\s*<\/body>/)[1];
-  const pageCore = approvalFixtures ? { ...core, createApprovals: () => approvalFixtures.map((item) => ({ ...item })) } : core;
+  const pageCore = Object.assign({}, core, approvalFixtures ? { createApprovals: () => approvalFixtures.map((item) => ({ ...item })) } : {}, coreOverrides);
   vm.runInNewContext(script, { document, window: { UserDeleteCore: pageCore }, setTimeout: () => 0 }, { filename: 'index.html' });
   const get = document.getElementById;
   const change = (element, value) => { element.value = value; element.dispatch('change'); };
@@ -89,6 +89,17 @@ function loadPage(approvalFixtures) {
   const openUser = (id) => { const button = select('[data-view]').find((item) => item.dataset.view === id); assert(button, 'user should be listed: ' + id); button.click(); get('btn-delete-user').click(); };
   const assign = () => select('[data-assign-resource], [data-assign-approval]').forEach((element) => change(element, 'u2'));
   return { get, change, input, openUser, assign, select };
+}
+
+{
+  const page = loadPage(undefined, { createApprovalHistory: undefined });
+  assert(page.select('[data-view]').length >= 10, 'cached core without the optional history factory must still render the user list');
+  page.openUser('u1');
+  assert.equal(page.select('[data-assign-approval]').length, 2);
+  page.assign();
+  page.input('zhangwei');
+  page.get('btn-delete-account-confirm').click();
+  assert(page.get('delete-result').classList.contains('show'), 'deletion must remain usable with the previous core interface');
 }
 
 {
@@ -107,15 +118,7 @@ function loadPage(approvalFixtures) {
   page.input('zhangwei');
   assert(page.get('delete-account-input').dispatch('keydown', { key: 'Enter' }).prevented, 'Enter must be prevented');
   assert.equal(page.get('delete-result').classList.contains('show'), false);
-  page.get('delete-scenario').value = 'failure';
   page.get('btn-delete-account-confirm').click();
-  assert.equal(page.get('delete-failure').hidden, false);
-  assert.equal(page.get('kb-owner-name').textContent, '张伟', 'failure must preserve ownership');
-  assert(page.select('[data-view]').some((button) => button.dataset.view === 'u1'), 'failure must preserve listed user');
-  page.change(page.select('[data-assign-approval]')[0], '');
-  assert(page.get('btn-delete-retry').disabled, 'retry must honor recipient gate');
-  page.change(page.select('[data-assign-approval]')[0], 'u2');
-  page.get('btn-delete-retry').click();
   assert(page.get('delete-result').classList.contains('show'));
   assert.equal(page.get('kb-owner-name').textContent, '李娜', 'success must update displayed owner');
   assert.equal(page.select('[data-view]').some((button) => button.dataset.view === 'u1'), false, 'deleted user must leave list');
@@ -155,11 +158,6 @@ function loadPage(approvalFixtures) {
   assert(!page.get('kb-owner-recipient').innerHTML.includes('value="u1"'), 'owner must be excluded');
   assert(!page.get('kb-owner-recipient').innerHTML.includes('value="u3"'), 'normal users must be excluded');
   page.change(page.get('kb-owner-recipient'), 'u2');
-  page.get('kb-owner-scenario').value = 'failure';
-  page.get('btn-confirm-kb-owner').click();
-  assert.equal(page.get('kb-owner-name').textContent, '张伟');
-  assert(page.get('kb-owner-error').classList.contains('show'));
-  page.get('kb-owner-scenario').value = 'success';
   page.get('btn-confirm-kb-owner').click();
   assert.equal(page.get('kb-owner-name').textContent, '李娜');
   assert.equal(page.get('modal-kb-owner-transfer').classList.contains('show'), false);
