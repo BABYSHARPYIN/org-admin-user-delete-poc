@@ -1523,14 +1523,14 @@ table.data tr:hover td { background: #fafafa; }
               </div>
               <div class="kb-section">
                 <div class="kb-section-head">
-                  <h3>授权列表</h3>
-                  <div class="btn-group">
-                    <div class="search-box icon-right">
-                      <input class="input" id="kb-member-search" placeholder="请输入搜索内容" aria-label="搜索授权" />
-                      <span class="search-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
-                    </div>
-                    <button class="btn btn-primary" type="button" id="btn-add-kb-auth">添加授权</button>
+                  <h3>成员管理</h3>
+                </div>
+                <div class="kb-member-toolbar">
+                  <div class="search-box icon-right kb-member-query-box">
+                    <input class="input" id="kb-member-search" placeholder="搜索用户名/姓名" aria-label="搜索成员" />
+                    <span class="search-ico" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
                   </div>
+                  <button class="btn btn-primary" type="button" id="btn-add-kb-auth">添加成员</button>
                 </div>
                 <div class="table-wrap">
                   <table class="data">
@@ -1692,8 +1692,9 @@ table.data tr:hover td { background: #fafafa; }
       </div>
       <div class="modal-body">
         <div class="form-row">
-          <label for="kb-owner-recipient">接收人</label>
-          <select class="input" id="kb-owner-recipient" aria-describedby="kb-owner-transfer-help"></select>
+          <label for="kb-owner-search">接收人</label>
+          <input class="input" id="kb-owner-search" placeholder="搜索姓名或账号" autocomplete="off" aria-describedby="kb-owner-transfer-help" />
+          <div class="kb-owner-candidates" id="kb-owner-candidates" role="listbox" aria-label="所有者接收人"></div>
           <p class="delete-final-warning" id="kb-owner-transfer-help">请选择状态正常的管理员或子管理员，不能选择当前所有者。转移后原所有者保留编辑权限。</p>
         </div>
         <div class="field-error" id="kb-owner-error" role="alert"></div>
@@ -1708,7 +1709,7 @@ table.data tr:hover td { background: #fafafa; }
   <div class="modal-mask" id="modal-kb-auth">
     <div class="modal">
       <div class="modal-header">
-        <h3>添加授权</h3>
+        <h3>添加成员</h3>
         <button class="btn-icon" type="button" data-close="modal-kb-auth" aria-label="关闭">✕</button>
       </div>
       <div class="modal-body">
@@ -3114,25 +3115,44 @@ table.data tr:hover td { background: #fafafa; }
 
   function openKbOwnerTransfer() {
     const kb = demoResources.find((resource) => resource.id === "kb-001");
-    document.getElementById("kb-owner-recipient").innerHTML = recipientOptions(kb.ownerId, "");
-    document.getElementById("kb-owner-recipient").value = "";
+    document.getElementById("kb-owner-search").value = "";
+    document.getElementById("kb-owner-search").dataset.selectedId = "";
+    renderKbOwnerCandidates(kb.ownerId, "");
     document.getElementById("kb-owner-error").classList.remove("show");
     document.getElementById("btn-confirm-kb-owner").disabled = true;
     openModal("modal-kb-owner-transfer");
   }
 
   document.getElementById("btn-transfer-kb-owner").addEventListener("click", openKbOwnerTransfer);
-  document.getElementById("kb-owner-recipient").addEventListener("change", (event) => {
+  function renderKbOwnerCandidates(excludedId, query) {
+    const q = (query || "").trim().toLowerCase();
+    const candidates = deleteCore().getTransferCandidates(users, excludedId).filter((user) =>
+      !q || user.name.toLowerCase().includes(q) || user.account.toLowerCase().includes(q));
+    document.getElementById("kb-owner-candidates").innerHTML = candidates.length ? candidates.map((user) =>
+      '<button type="button" class="kb-owner-candidate" data-owner-recipient="' + escapeHtml(user.id) + '" role="option">' +
+      '<strong>' + escapeHtml(user.name) + '</strong><span>' + escapeHtml(user.account) + ' · ' + escapeHtml(roleText(user.roleIds)) + '</span></button>').join("") :
+      '<div class="kb-owner-empty">未找到可转让的管理员或子管理员</div>';
+    document.querySelectorAll("[data-owner-recipient]").forEach((candidate) => candidate.addEventListener("click", () => {
+      const search = document.getElementById("kb-owner-search");
+      const recipient = users.find((user) => user.id === candidate.dataset.ownerRecipient);
+      search.value = recipient ? recipient.name + "（" + recipient.account + "）" : "";
+      search.dataset.selectedId = candidate.dataset.ownerRecipient;
+      document.querySelectorAll("[data-owner-recipient]").forEach((item) => item.classList.toggle("selected", item === candidate));
+      document.getElementById("btn-confirm-kb-owner").disabled = false;
+    }));
+  }
+  document.getElementById("kb-owner-search").addEventListener("input", (event) => {
     const kb = demoResources.find((resource) => resource.id === "kb-001");
-    const recipient = users.find((user) => user.id === event.target.value);
-    document.getElementById("btn-confirm-kb-owner").disabled = !deleteCore().isEligibleRecipient(recipient, kb.ownerId);
+    event.target.dataset.selectedId = "";
+    document.getElementById("btn-confirm-kb-owner").disabled = true;
+    renderKbOwnerCandidates(kb.ownerId, event.target.value);
   });
   document.getElementById("btn-confirm-kb-owner").addEventListener("click", () => {
     const kb = demoResources.find((resource) => resource.id === "kb-001");
     const result = deleteCore().transferOwnership({
       resource: kb,
       users,
-      recipientId: document.getElementById("kb-owner-recipient").value,
+      recipientId: document.getElementById("kb-owner-search").dataset.selectedId,
       mode: "success",
     });
     if (!result.success) {

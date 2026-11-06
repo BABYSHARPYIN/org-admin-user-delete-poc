@@ -155,9 +155,12 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   const page = loadPage();
   page.get('btn-transfer-kb-owner').click();
   assert(page.get('modal-kb-owner-transfer').classList.contains('show'));
-  assert(!page.get('kb-owner-recipient').innerHTML.includes('value="u1"'), 'owner must be excluded');
-  assert(!page.get('kb-owner-recipient').innerHTML.includes('value="u3"'), 'normal users must be excluded');
-  page.change(page.get('kb-owner-recipient'), 'u2');
+  assert(page.get('kb-owner-search').tag === 'input', 'owner transfer must use a user search field');
+  assert(!page.get('kb-owner-candidates').innerHTML.includes('data-owner-recipient="u1"'), 'owner must be excluded');
+  assert(!page.get('kb-owner-candidates').innerHTML.includes('data-owner-recipient="u3"'), 'normal users must be excluded');
+  page.get('kb-owner-search').value = 'lina';
+  page.get('kb-owner-search').dispatch('input');
+  page.select('[data-owner-recipient="u2"]')[0].click();
   page.get('btn-confirm-kb-owner').click();
   assert.equal(page.get('kb-owner-name').textContent, '李娜');
   assert.equal(page.get('modal-kb-owner-transfer').classList.contains('show'), false);
