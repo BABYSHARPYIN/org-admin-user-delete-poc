@@ -39,6 +39,11 @@ const approvals = core.createApprovals();
 const approvalAssignments = core.createAssignments(approvals);
 approvalAssignments[approvals[0].id] = 'u2';
 approvalAssignments[approvals[1].id] = 'u4';
+const approvalHistory = [
+  { id: 'ap-history-pending', name: '历史节点待审核', referenceType: '历史审核节点', node: '已离开当前节点', currentNode: false, ended: false, referencedUserIds: ['u1'], fallbackAction: '回退待审核' },
+  { id: 'ap-history-rejected', name: '历史节点自动驳回', referenceType: '历史审核节点', node: '已审核', currentNode: false, ended: false, referencedUserIds: ['u1'], fallbackAction: '自动驳回' },
+  { id: 'ap-history-ended', name: '历史节点已结束', referenceType: '历史审核节点', node: '已结束', currentNode: false, ended: true, referencedUserIds: ['u1'], fallbackAction: '自动驳回' },
+];
 
 function runDeletion(mode, extra) {
   return core.executeDeletion(Object.assign({
@@ -103,7 +108,16 @@ test('only active admin or sub-admin recipients are eligible', () => {
 test('only owner resources enter transfer and every approval has a recipient', () => {
   assert(owned.length === 2 && owned.every((resource) => resource.relation === 'owner'), 'only owner resources should be transferable');
   assert(approvals.length >= 1 && approvals.length <= 2, 'approval fixture should be small');
-  assert(approvals.every((approval) => approval.option === '转交'), 'approvals should use handoff semantics');
+  assert(approvals.every((approval) => approval.option === '审核转让'), 'approvals should use handoff semantics');
+});
+
+test('only current unfinished approvals referencing the target enter the handoff list', () => {
+  const mixed = approvals.concat(approvalHistory, [
+    { id: 'ap-other-user', name: '他人审批', currentNode: true, ended: false, referencedUserIds: ['u2'], assigneeId: 'u1' },
+    { id: 'ap-ended-current', name: '已结束审批', currentNode: true, ended: true, referencedUserIds: ['u1'], assigneeId: 'u1' },
+  ]);
+  const current = core.getCurrentNodeApprovals(mixed, 'u1');
+  assert(current.map((approval) => approval.id).join(',') === approvals.map((approval) => approval.id).join(','), 'historical, ended, and unrelated approvals must be excluded');
 });
 
 test('handoff validation covers resources and approvals', () => {
@@ -117,11 +131,13 @@ test('handoff validation covers resources and approvals', () => {
 });
 
 test('successful deletion transfers resources and approvals then deletes the user', () => {
-  const result = runDeletion('success');
+  const result = runDeletion('success', { approvals: approvals.concat(approvalHistory) });
   assert(result.status === 'success' && result.userStatus === 'deleted', 'success mode should delete user');
   assert(result.resourcesTransferred === 2 && result.approvalsTransferred === approvals.length, 'handoffs should be recorded');
   assert(result.transfers.every((item) => item.assigneeId !== 'u1'), 'resource transfers must not go to target');
   assert(result.approvalTransfers.every((item) => item.assigneeId !== 'u1'), 'approval transfers must not go to target');
+  assert(result.approvalFallbacks.map((item) => item.action).join(',') === '回退待审核,自动驳回,未知用户', 'historical nodes should use fallback handling');
+  assert(result.records.some((record) => record.label === '审核节点兜底'), 'result should summarize approval-node fallback');
 });
 
 test('failure keeps user active and retry returns to the same processing page', () => {

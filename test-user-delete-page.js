@@ -5,7 +5,7 @@ const vm = require('vm');
 const core = require('./user-delete-core');
 const html = fs.readFileSync(require('path').join(__dirname, 'index.html'), 'utf8');
 
-function loadPage() {
+function loadPage(approvalFixtures) {
   const all = [];
   class Element {
     constructor(tag = 'div', attributes = '') {
@@ -81,7 +81,8 @@ function loadPage() {
     createDocumentFragment: () => new Element('fragment'),
   };
   const script = html.match(/<script>\s*([\s\S]*?)<\/script>\s*<\/body>/)[1];
-  vm.runInNewContext(script, { document, window: { UserDeleteCore: core }, setTimeout: () => 0 }, { filename: 'index.html' });
+  const pageCore = approvalFixtures ? { ...core, createApprovals: () => approvalFixtures.map((item) => ({ ...item })) } : core;
+  vm.runInNewContext(script, { document, window: { UserDeleteCore: pageCore }, setTimeout: () => 0 }, { filename: 'index.html' });
   const get = document.getElementById;
   const change = (element, value) => { element.value = value; element.dispatch('change'); };
   const input = (value) => { get('delete-account-input').value = value; get('delete-account-input').dispatch('input'); };
@@ -96,6 +97,7 @@ function loadPage() {
   assert(page.get('delete-wizard').classList.contains('show'));
   assert.equal(page.select('[data-assign-resource]').length, 2, 'demo should have two owned resources');
   assert.equal(page.select('[data-assign-approval]').length, 2, 'demo should have two approvals');
+  assert(!page.get('delete-approval-list').innerHTML.includes('图纸归档审批'), 'historical nodes must not appear in the handoff list');
   page.input('zhangwei');
   assert(page.get('btn-delete-account-confirm').disabled, 'exact account alone cannot enable deletion');
   page.assign();
@@ -117,12 +119,34 @@ function loadPage() {
   assert(page.get('delete-result').classList.contains('show'));
   assert.equal(page.get('kb-owner-name').textContent, '李娜', 'success must update displayed owner');
   assert.equal(page.select('[data-view]').some((button) => button.dataset.view === 'u1'), false, 'deleted user must leave list');
+  assert.match(page.get('delete-result-approval-fallback').textContent, /回退待审核/);
+  assert.match(page.get('delete-result-approval-fallback').textContent, /自动驳回/);
+  assert.match(page.get('delete-result-approval-fallback').textContent, /未知用户/);
   assert(page.get('btn-delete-account-confirm').disabled, 'completed deletion must not execute again');
   page.openUser('u2');
   assert.equal(page.select('[data-assign-resource]').length, 2, 'recipient must now own transferred resources');
   assert.equal(page.select('[data-assign-approval]').length, 2, 'recipient must now receive transferred approvals');
   assert.equal(page.get('delete-account-input').value, '', 'new deletion must reset account');
   assert.equal(page.get('delete-account-input').disabled, false);
+}
+{
+  const page = loadPage([
+    { id: 'current', name: '当前审核', currentNode: true, ended: false, referencedUserIds: ['u1'], assigneeId: 'u2', node: '待审核' },
+    { id: 'history', name: '历史审核', currentNode: false, ended: false, referencedUserIds: ['u1'], assigneeId: 'u2', fallbackAction: '回退待审核' },
+    { id: 'ended', name: '已结束审核', currentNode: true, ended: true, referencedUserIds: ['u1'], assigneeId: 'u1' },
+    { id: 'unrelated', name: '他人审核', currentNode: true, ended: false, referencedUserIds: ['u2'], assigneeId: 'u1' },
+  ]);
+  page.openUser('u1');
+  assert.deepEqual(page.select('[data-assign-approval]').map((item) => item.dataset.assignApproval), ['current'], 'only the current unfinished node referencing the user can be assigned');
+  page.select('[data-assign-resource]').forEach((element) => page.change(element, 'u2'));
+  page.input('zhangwei');
+  assert(page.get('btn-delete-account-confirm').disabled, 'current approval must have a recipient');
+  page.change(page.select('[data-assign-approval]')[0], 'u2');
+  page.get('btn-delete-account-confirm').click();
+  assert(page.get('delete-result').classList.contains('show'), 'resources plus current approval should allow deletion without historical recipients');
+  assert.equal(page.get('delete-result-approvals').textContent, '1 条当前节点已转让');
+  page.openUser('u2');
+  assert.deepEqual(page.select('[data-assign-approval]').map((item) => item.dataset.assignApproval), ['current', 'unrelated'], 'each current unfinished node referencing the selected user must be available regardless of assignee');
 }
 {
   const page = loadPage();

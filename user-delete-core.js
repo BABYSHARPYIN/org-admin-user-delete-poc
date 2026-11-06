@@ -29,6 +29,11 @@
     return (resources || []).filter((resource) => resource.ownerId === userId && resource.relation === 'owner');
   }
 
+  function getCurrentNodeApprovals(approvals, userId) {
+    return (approvals || []).filter((approval) => approval.currentNode === true && approval.ended === false &&
+      (approval.referencedUserIds || []).indexOf(userId) !== -1);
+  }
+
   function createAssignments(items) {
     const assignments = {};
     (items || []).forEach((item) => { assignments[item.id] = ''; });
@@ -55,7 +60,7 @@
     const errors = Object.assign(
       {},
       validateAssignments(resources, assignments, users, targetUserId, '请选择资源接收人'),
-      validateAssignments(approvals, approvalAssignments, users, targetUserId, '请选择审批接收人')
+      validateAssignments(getCurrentNodeApprovals(approvals, targetUserId), approvalAssignments, users, targetUserId, '请选择审核转让接收人')
     );
     return { valid: Object.keys(errors).length === 0, errors };
   }
@@ -75,9 +80,28 @@
 
   function createApprovals() {
     return [
-      { id: 'ap-drawing', name: '图纸发布审批', referenceType: '待办节点', node: '待处理', option: '转交' },
-      { id: 'ap-kb', name: '知识库创建审批', referenceType: '审批中节点', node: '审批中', option: '转交' },
+      { id: 'ap-drawing', name: '图纸发布审批', referenceType: '当前审核节点', node: '当前节点 · 待审核', currentNode: true, ended: false, referencedUserIds: ['u1'], assigneeId: 'u1', option: '审核转让' },
+      { id: 'ap-kb', name: '知识库创建审批', referenceType: '当前审核节点', node: '当前节点 · 审核中', currentNode: true, ended: false, referencedUserIds: ['u1'], assigneeId: 'u1', option: '审核转让' },
     ];
+  }
+
+  function createApprovalHistory() {
+    return [
+      { id: 'ap-history-drawing', name: '图纸归档审批', node: '历史节点 · 已审核', currentNode: false, ended: false, referencedUserIds: ['u1'], fallbackAction: '回退待审核' },
+      { id: 'ap-history-kb', name: '知识库变更审批', node: '历史节点 · 已审核', currentNode: false, ended: false, referencedUserIds: ['u1'], fallbackAction: '自动驳回' },
+      { id: 'ap-history-ended', name: '已结束发布审批', node: '历史节点 · 已结束', currentNode: false, ended: true, referencedUserIds: ['u1'] },
+    ];
+  }
+
+  function summarizeApprovalFallbacks(approvals, userId) {
+    return (approvals || []).filter((approval) => approval.currentNode === false &&
+      (approval.referencedUserIds || []).indexOf(userId) !== -1).map((approval) => ({
+      approvalId: approval.id,
+      name: approval.name || '',
+      action: !approval.ended && ['回退待审核', '自动驳回'].indexOf(approval.fallbackAction) !== -1 ? approval.fallbackAction : '未知用户',
+      userDisplay: '未知用户',
+      permissionSubject: null,
+    }));
   }
 
   function summarizeApprovals(approvals) {
@@ -113,7 +137,7 @@
     const config = options || {};
     const resources = config.resources || [];
     const assignments = config.assignments || {};
-    const approvals = config.approvals || [];
+    const approvals = getCurrentNodeApprovals(config.approvals, config.targetUserId);
     const approvalAssignments = config.approvalAssignments || {};
     const users = config.users || [];
     const targetUserId = config.targetUserId;
@@ -126,7 +150,9 @@
     const recognizedMode = config.mode === 'success' || config.mode === 'failure' || config.mode === 'retry';
     const failed = !retry && (!recognizedMode || config.mode === 'failure');
     const success = valid && !failed || retry && valid;
-    const error = !targetActive ? '待删除用户状态不是正常，用户暂未删除' : !accountValid ? '账号输入不匹配，用户暂未删除' : !validation.valid ? '所有资源和审批都需要指定合规接收人，用户暂未删除' : '处理失败，用户保持正常状态，可重试';
+    const approvalFallbacks = success ? summarizeApprovalFallbacks(config.approvals, targetUserId) : [];
+    const fallbackDetail = approvalFallbacks.length ? approvalFallbacks.map((item) => item.name + '：' + item.action + '（' + item.userDisplay + '）').join('；') : '无历史节点需要兜底';
+    const error = !targetActive ? '待删除用户状态不是正常，用户暂未删除' : !accountValid ? '账号输入不匹配，用户暂未删除' : !validation.valid ? '所有资源转让和当前节点审核转让都需要指定合规接收人，用户暂未删除' : '处理失败，用户保持正常状态，可重试';
     return {
       taskId: 'UD-' + Date.now().toString(36).toUpperCase(),
       status: success ? 'success' : 'failed',
@@ -142,10 +168,13 @@
       completedAt: new Date().toISOString(),
       transfers: success ? resources.map((resource) => ({ resourceId: resource.id, name: resource.name || '', type: resource.type || '', assigneeId: assignments[resource.id] || '' })) : [],
       approvalTransfers: success ? approvals.map((approval) => ({ approvalId: approval.id, name: approval.name || '', assigneeId: approvalAssignments[approval.id] || '' })) : [],
+      approvalFallbacks,
+      approvalFallbackSummary: success ? fallbackDetail : '',
       records: success ? [
         { key: 'transfer', label: '资源所有权', detail: resources.length + ' 项已转移' },
-        { key: 'approval', label: '未结束审批', detail: approvals.length + ' 条已转交' },
+        { key: 'approval', label: '审核转让', detail: approvals.length + ' 条当前节点已转让' },
         { key: 'delete', label: '账号注销', detail: '已完成' },
+        { key: 'approval-fallback', label: '审核节点兜底', detail: fallbackDetail },
       ] : [],
       mode: config.mode || 'success',
       account: config.account || '',
@@ -176,11 +205,14 @@
     isEligibleRecipient,
     getTransferCandidates,
     getOwnedResources,
+    getCurrentNodeApprovals,
     createAssignments,
     validateAssignments,
     validateHandoffs,
     summarizeAssignments,
     createApprovals,
+    createApprovalHistory,
+    summarizeApprovalFallbacks,
     summarizeApprovals,
     executeDeletion,
     canDelete,

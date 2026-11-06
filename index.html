@@ -1601,7 +1601,7 @@ table.data tr:hover td { background: #fafafa; }
       </div>
       <div class="delete-body">
         <section class="delete-page" data-flow-page="delete">
-          <p class="delete-final-warning">请逐项指定资源和未结束审核单的接收人，再输入账号确认。接收人须为状态正常的管理员或子管理员，且不能是待删除用户。</p>
+          <p class="delete-final-warning">请逐项指定资源和当前节点审核转让接收人，再输入账号确认。接收人须为状态正常的管理员或子管理员，且不能是待删除用户。</p>
           <div class="delete-section">
             <div class="delete-section-head"><h5>所有者资源</h5><span class="delete-section-note">仅转移所有者资源，编辑权无需配置</span></div>
             <div class="delete-table-wrap">
@@ -1612,10 +1612,10 @@ table.data tr:hover td { background: #fafafa; }
             </div>
           </div>
           <div class="delete-section">
-            <div class="delete-section-head"><h5>未结束审核单</h5><span class="delete-section-note">每条指定一名接收人</span></div>
+            <div class="delete-section-head"><h5>当前节点审核转让</h5><span class="delete-section-note">每条指定一名接收人</span></div>
             <div class="delete-table-wrap">
               <table class="delete-table">
-                <thead><tr><th>审核单</th><th>当前状态</th><th>接收人</th></tr></thead>
+                <thead><tr><th>审核</th><th>当前节点</th><th>接收人</th></tr></thead>
                 <tbody id="delete-approval-list"></tbody>
               </table>
             </div>
@@ -1624,7 +1624,7 @@ table.data tr:hover td { background: #fafafa; }
             <label for="delete-account-input">输入账号 <span class="required-account" id="delete-account-hint"></span> 以确认删除</label>
             <input class="input" id="delete-account-input" autocomplete="off" spellcheck="false" placeholder="请输入完整账号" aria-describedby="delete-confirm-error" />
             <div class="field-error" id="delete-confirm-error" role="alert">账号输入完全一致后才能删除</div>
-            <p class="delete-final-warning">删除后账号无法登录。只有全部资源和审核单转交成功才会注销账号；处理失败时用户保持正常，可在此页重试。按 Enter 不会提交。</p>
+            <p class="delete-final-warning">删除后账号无法登录。只有全部资源和当前节点审核转让成功才会注销账号；历史节点由审核节点兜底处理。按 Enter 不会提交。</p>
           </div>
           <div class="delete-failure" id="delete-failure" role="alert" tabindex="-1" hidden>
             <div class="delete-failure-head">
@@ -1637,8 +1637,9 @@ table.data tr:hover td { background: #fafafa; }
             <div class="delete-result-head">删除完成</div>
             <div class="delete-result-row"><span>任务编号</span><strong id="delete-task-id">--</strong></div>
             <div class="delete-result-row"><span>资源转移</span><strong id="delete-result-transfers">--</strong></div>
-            <div class="delete-result-row"><span>审核单转交</span><strong id="delete-result-approvals">--</strong></div>
+            <div class="delete-result-row"><span>审核转让</span><strong id="delete-result-approvals">--</strong></div>
             <div class="delete-result-row"><span>查询兜底</span><strong id="delete-result-fallback">--</strong></div>
+            <div class="delete-result-row"><span>审核节点兜底</span><strong id="delete-result-approval-fallback">--</strong></div>
             <div class="record-list" id="delete-record-list"></div>
           </div>
         </section>
@@ -1999,7 +2000,7 @@ table.data tr:hover td { background: #fafafa; }
     { id: "kb-001", name: "测试知识库", type: "知识库", ownerId: "u1", relation: "owner" },
     { id: "agent-001", name: "售前 Agent", type: "Agent", ownerId: "u1", relation: "owner" },
   ];
-  let demoApprovals = window.UserDeleteCore.createApprovals().map((approval) => Object.assign({ assigneeId: "u1" }, approval));
+  let demoApprovals = window.UserDeleteCore.createApprovals().concat(window.UserDeleteCore.createApprovalHistory()).map((approval) => Object.assign({ assigneeId: "u1" }, approval));
 
   const PAGE_SIZE = 10;
 
@@ -2907,6 +2908,7 @@ table.data tr:hover td { background: #fafafa; }
     user: null,
     resources: [],
     approvals: [],
+    approvalHistory: [],
     assignments: {},
     approvalAssignments: {},
     result: null,
@@ -2935,7 +2937,7 @@ table.data tr:hover td { background: #fafafa; }
         '<tr><td colspan="3" class="delete-empty">没有需要转交的' + typeLabel + '</td></tr>';
     }
     document.getElementById("delete-resource-list").innerHTML = rows(deleteFlow.resources, deleteFlow.assignments, "data-assign-resource", "所有者资源");
-    document.getElementById("delete-approval-list").innerHTML = rows(deleteFlow.approvals, deleteFlow.approvalAssignments, "data-assign-approval", "未结束审核单");
+    document.getElementById("delete-approval-list").innerHTML = rows(deleteFlow.approvals, deleteFlow.approvalAssignments, "data-assign-approval", "当前节点审核单");
     document.querySelectorAll("[data-assign-resource], [data-assign-approval]").forEach((select) => {
       select.addEventListener("change", () => {
         if (select.dataset.assignResource) deleteFlow.assignments[select.dataset.assignResource] = select.value;
@@ -2949,7 +2951,7 @@ table.data tr:hover td { background: #fafafa; }
     return {
       resources: deleteFlow.resources,
       assignments: deleteFlow.assignments,
-      approvals: deleteFlow.approvals,
+      approvals: deleteFlow.approvals.concat(deleteFlow.approvalHistory),
       approvalAssignments: deleteFlow.approvalAssignments,
       users,
       targetUserId: deleteFlow.user.id,
@@ -2975,7 +2977,10 @@ table.data tr:hover td { background: #fafafa; }
     closeModal("modal-user");
     deleteFlow.user = user;
     deleteFlow.resources = deleteCore().getOwnedResources(demoResources, user.id);
-    deleteFlow.approvals = demoApprovals.filter((approval) => approval.assigneeId === user.id);
+    const userApprovals = demoApprovals.filter((approval) =>
+      (approval.referencedUserIds || []).indexOf(user.id) !== -1 || approval.assigneeId === user.id);
+    deleteFlow.approvals = deleteCore().getCurrentNodeApprovals(userApprovals, user.id);
+    deleteFlow.approvalHistory = userApprovals.filter((approval) => deleteFlow.approvals.indexOf(approval) === -1);
     deleteFlow.assignments = deleteCore().createAssignments(deleteFlow.resources);
     deleteFlow.approvalAssignments = deleteCore().createAssignments(deleteFlow.approvals);
     deleteFlow.result = null;
@@ -3016,15 +3021,17 @@ table.data tr:hover td { background: #fafafa; }
     const result = deleteCore().executeDeletion(Object.assign({}, request, { retry: retry === true }));
     deleteFlow.result = result;
     if (result.status === "success") {
+      const user = deleteFlow.user;
       demoResources = demoResources.map((resource) => {
         const transfer = result.transfers.find((item) => item.resourceId === resource.id);
         return transfer ? Object.assign({}, resource, { ownerId: transfer.assigneeId }) : resource;
       });
       demoApprovals = demoApprovals.map((approval) => {
         const transfer = result.approvalTransfers.find((item) => item.approvalId === approval.id);
-        return transfer ? Object.assign({}, approval, { assigneeId: transfer.assigneeId }) : approval;
+        if (!transfer) return approval;
+        const referencedUserIds = (approval.referencedUserIds || []).map((id) => id === user.id ? transfer.assigneeId : id);
+        return Object.assign({}, approval, { assigneeId: transfer.assigneeId, referencedUserIds });
       });
-      const user = deleteFlow.user;
       user.status = "deleted";
       user.deleted = true;
       const kb = demoResources.find((resource) => resource.id === "kb-001");
@@ -3036,7 +3043,8 @@ table.data tr:hover td { background: #fafafa; }
       document.getElementById("delete-result").classList.add("show");
       document.getElementById("delete-task-id").textContent = result.taskId;
       document.getElementById("delete-result-transfers").textContent = result.resourcesTransferred + " 项已转移";
-      document.getElementById("delete-result-approvals").textContent = result.approvalsTransferred + " 条已转交";
+      document.getElementById("delete-result-approvals").textContent = result.approvalsTransferred + " 条当前节点已转让";
+      document.getElementById("delete-result-approval-fallback").textContent = result.approvalFallbackSummary || "无历史节点需要兜底";
       const fallback = deleteCore().resolveUserDisplay({ users, userId: user.id });
       document.getElementById("delete-result-fallback").textContent = fallback.name + " · user_id = " + fallback.userId;
       document.getElementById("delete-record-list").innerHTML = result.records.map((record) =>
