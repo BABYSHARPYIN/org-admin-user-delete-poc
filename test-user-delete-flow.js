@@ -96,6 +96,8 @@ test('knowledge base owner transfer entry and modal are present', () => {
   assert(index.includes('id="modal-kb-owner-transfer"'), 'knowledge-base owner transfer modal is missing');
   assert(index.includes('id="kb-owner-recipient"'), 'knowledge-base owner recipient picker is missing');
   assert(index.includes('转移所有者'), 'knowledge-base owner transfer copy is missing');
+  assert(index.includes('class="kb-instance-side"') && index.includes('class="kb-instance-tab active"'), 'knowledge-base page should reuse the system settings layout');
+  assert(index.includes('var(--primary-bg)') && index.includes('var(--border)'), 'knowledge-base styling should use the existing admin tokens');
 });
 
 test('only active admin or sub-admin recipients are eligible', () => {
