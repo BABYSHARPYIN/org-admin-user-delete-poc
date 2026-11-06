@@ -19,26 +19,13 @@ function test(name, run) {
   }
 }
 
-function runDeletion(mode, extra) {
-  return core.executeDeletion(Object.assign({
-    resources: owned,
-    assignments,
-    approvals,
-    users,
-    targetUserId: 'u1',
-    mode,
-  }, extra || {}));
-}
-
 const users = [
   { id: 'u1', name: '张伟', account: 'zhangwei', status: 'active', roleIds: ['r-admin'] },
   { id: 'u2', name: '李娜', account: 'lina', status: 'active', roleIds: ['r-sub'] },
   { id: 'u3', name: '王强', account: 'wangqiang', status: 'active', roleIds: ['r-user'] },
   { id: 'u4', name: '赵敏', account: 'zhaomin', status: 'active', roleIds: ['r-admin', 'r-user'] },
   { id: 'u5', name: '郑爽', account: 'zhengshuang', status: 'deleted', roleIds: ['r-sub'] },
-  { id: 'u6', name: '钱七', account: 'qianqi', status: 'active', deleted: true, roleIds: ['r-admin'] },
 ];
-
 const resources = [
   { id: 'r1', name: '客服知识库', type: '知识库', ownerId: 'u1', relation: 'owner' },
   { id: 'r2', name: '售前 Agent', type: 'Agent', ownerId: 'u1', relation: 'owner' },
@@ -49,161 +36,138 @@ const assignments = core.createAssignments(owned);
 assignments.r1 = 'u2';
 assignments.r2 = 'u4';
 const approvals = core.createApprovals();
+const approvalAssignments = core.createAssignments(approvals);
+approvalAssignments[approvals[0].id] = 'u2';
+approvalAssignments[approvals[1].id] = 'u4';
 
-test('page is based on the org-admin-poc user list shell', () => {
+function runDeletion(mode, extra) {
+  return core.executeDeletion(Object.assign({
+    resources: owned,
+    assignments,
+    approvals,
+    approvalAssignments,
+    users,
+    targetUserId: 'u1',
+    accountInput: 'zhangwei',
+    account: 'zhangwei',
+    mode,
+  }, extra || {}));
+}
+
+test('page keeps the existing user list and drawer shell', () => {
   assert(index.includes('<title>AI应用平台 · 管理后台</title>'), 'source page title is missing');
   assert(index.includes('>用户列表</h1>'), 'user list heading is missing');
-  assert(index.includes('用户管理'), 'live sidebar label is missing');
-  assert(index.includes('id="org-tree"'), 'source organization tree is missing');
-  assert(index.includes('id="user-tbody"'), 'source user table is missing');
-  assert(index.includes('placeholder="请输入搜索内容"'), 'source user search is missing');
-  assert(index.includes('>账号类型</th>'), 'source account-type column is missing');
-  assert(index.includes('>组织信息</th>'), 'source organization column is missing');
-  assert(index.includes('id="org-tree"'), 'source org tree is missing');
-  assert(index.includes('>账号类型</span>') || index.includes('>账号类型</label>'), 'source account-type drawer field is missing');
+  assert(index.includes('用户管理') && index.includes('id="org-tree"') && index.includes('id="user-tbody"'), 'user list shell is missing');
+  assert(index.includes('id="modal-user"') && index.includes('id="btn-delete-user"'), 'user drawer delete entry is missing');
   assert(!index.includes('本地演示数据'), 'tutorial demo banner must not remain');
 });
 
-test('drawer stays basic-info-only and entry opens the delete wizard', () => {
-  assert(index.includes('id="modal-user"'), 'existing user drawer is missing');
-  assert(index.includes('id="btn-delete-user"'), 'delete entry in drawer is missing');
-  assert(index.includes('id="delete-wizard"'), 'delete wizard is missing');
-  assert(index.includes('data-delete-open'), 'drawer delete button should open the wizard');
-  assert(index.includes('id="btn-edit-user"'), 'drawer edit action is missing');
-  assert(index.includes('id="user-footer-view"'), 'drawer read-only mode is missing');
-  assert(index.includes('data-flow-step="impact"'), 'impact-check step is missing');
-  assert(index.includes('data-flow-step="transfer"'), 'transfer step is missing');
-  assert(index.includes('data-flow-step="confirm"'), 'final-confirm step is missing');
-  assert(!index.includes('data-page="user-detail"'), 'obsolete detail page should not return');
-  assert(index.includes('影响检查'), 'impact-check copy is missing');
+test('delete flow is one page with no progress or navigation controls', () => {
+  assert(index.includes('id="delete-wizard"'), 'delete processing shell is missing');
+  assert(index.includes('data-flow-page="delete"'), 'single delete processing page is missing');
+  assert(!index.includes('delete-progress'), 'multi-step progress must be removed');
+  assert(!index.includes('data-flow-step='), 'step panels must be removed');
+  assert(!index.includes('btn-delete-next') && !index.includes('btn-delete-back'), 'next/back controls must be removed');
+  assert(index.includes('id="btn-delete-account-confirm"'), 'single final confirm button is missing');
 });
 
-test('wizard shows both owned resources and unfinished approvals read-only first', () => {
-  assert(index.includes('资源影响'), 'resource impact section is missing');
-  assert(index.includes('未结束审批'), 'approval impact section is missing');
-  assert(index.includes('id="delete-resource-list"'), 'resource list mount is missing');
-  assert(index.includes('id="delete-approval-list"'), 'approval list mount is missing');
-  assert(index.includes('知识库') && index.includes('Agent') && index.includes('图纸'), 'resource fixtures are incomplete');
+test('resource and approval handoffs are configured item by item', () => {
+  assert(index.includes('id="delete-resource-list"') && index.includes('data-assign-resource'), 'per-resource recipient controls are missing');
+  assert(index.includes('id="delete-approval-list"') && index.includes('data-assign-approval'), 'per-approval recipient controls are missing');
+  assert(!index.includes('batch-assignee') && !index.includes('apply-batch-assignee') && !index.includes('data-transfer-check'), 'batch transfer controls must be removed');
+  assert(!index.includes('系统统一驳回') && !index.includes('不会转交'), 'approval rejection-only copy must be removed');
+  assert((index.match(/data-assign-resource/g) || []).length >= 1, 'resource assignment mount is missing');
 });
 
-test('transfer UI has per-item and batch assignment controls', () => {
-  assert(index.includes('id="batch-assignee"'), 'batch recipient select is missing');
-  assert(index.includes('data-action="apply-batch-assignee"'), 'batch transfer action is missing');
-  assert(index.includes('批量转让给'), 'batch transfer label is missing');
-  assert(index.includes('data-assign-resource'), 'per-item transfer select is missing');
-  assert(index.includes('已使用单独配置'), 'single override hint is missing');
+test('demo data is small and scenarios are only success or failure', () => {
+  assert(core.createApprovals().length >= 1 && core.createApprovals().length <= 2, 'approval demo must contain one or two items');
+  assert(!index.includes('value="transfer-failure"') && !index.includes('value="approval-failure"') && !index.includes('value="delete-failure"'), 'detailed failure modes must be removed');
+  const scenario = index.match(/id="delete-scenario"[\s\S]*?<\/select>/);
+  assert(scenario && scenario[0].includes('value="success"') && scenario[0].includes('value="failure"'), 'only success/failure scenarios should be exposed');
+  assert(!/批量|分步|步骤|向导进度/.test(index + fs.readFileSync(path.join(root, 'user-delete-core.js'), 'utf8')), 'batch and step wording must be absent');
 });
 
-test('approval handoff is rejected, never transferred', () => {
-  assert(index.includes('该用户已注销'), 'fixed rejection reason is missing');
-  assert(index.includes('系统驳回'), 'system rejection copy is missing');
-  assert(index.includes('不会转交'), 'no-handoff copy is missing');
-  assert(index.includes('id="delete-approval-list"'), 'approval list is missing');
-});
-
-test('final confirmation requires exact account and ignores Enter', () => {
-  assert(index.includes('id="delete-account-input"'), 'account confirmation input is missing');
-  assert(index.includes('id="btn-delete-account-confirm"'), 'account confirmation button is missing');
-  assert(index.includes('id="delete-confirm-error"'), 'account confirmation error mount is missing');
-  assert(/event\.key\s*===\s*["']Enter["']/.test(index) && /preventDefault\(\)/.test(index), 'Enter must be suppressed in the confirm step');
-  assert(index.includes('账号输入完全一致'), 'exact account requirement copy is missing');
-});
-
-test('success, failure, retry, and deleted-user fallback paths are present', () => {
-  assert(index.includes('转让失败'), 'transfer-failure demo path is missing');
-  assert(index.includes('审批失败'), 'approval-failure demo path is missing');
-  assert(index.includes('删除失败'), 'delete-failure demo path is missing');
-  assert(index.includes('重试'), 'retry action is missing');
-  assert(index.includes('查看处理记录'), 'processing record entry is missing');
-  assert(index.includes('已删除用户'), 'deleted-user placeholder is missing');
-  assert(index.includes('user_id = -1'), 'fallback user_id is missing');
-  assert(index.includes('工艺文件包'), 'file resource fixture is missing');
+test('knowledge base owner transfer entry and modal are present', () => {
+  assert(index.includes('id="btn-transfer-kb-owner"'), 'knowledge-base owner transfer entry is missing');
+  assert(index.includes('id="modal-kb-owner-transfer"'), 'knowledge-base owner transfer modal is missing');
+  assert(index.includes('id="kb-owner-recipient"'), 'knowledge-base owner recipient picker is missing');
+  assert(index.includes('转移所有者'), 'knowledge-base owner transfer copy is missing');
 });
 
 test('only active admin or sub-admin recipients are eligible', () => {
-  const candidates = core.getTransferCandidates(users, 'u1');
-  assert(candidates.map((user) => user.id).join(',') === 'u2,u4', 'candidate list should be u2,u4');
-  assert(!core.isEligibleRecipient(users[2], 'u1'), 'normal user must not receive ownership');
-  assert(!core.isEligibleRecipient(users[0], 'u1'), 'target user must not receive ownership');
-  assert(!core.isEligibleRecipient(users[4], 'u1'), 'deleted user must not receive ownership');
-  assert(!core.isEligibleRecipient(users[5], 'u1'), 'explicitly deleted user must not receive ownership');
+  assert(core.getTransferCandidates(users, 'u1').map((user) => user.id).join(',') === 'u2,u4', 'candidate list should be u2,u4');
+  assert(!core.isEligibleRecipient(users[2], 'u1') && !core.isEligibleRecipient(users[0], 'u1'), 'normal user and target must be rejected');
+  assert(!core.isEligibleRecipient(users[4], 'u1'), 'deleted recipient must be rejected');
 });
 
-test('only owner resources enter transfer, not shared editor relations', () => {
-  assert(owned.length === 2, 'editor relation must be excluded from transfer');
-  assert(owned.every((resource) => resource.relation === 'owner'), 'only owner resources are transferable');
+test('only owner resources enter transfer and every approval has a recipient', () => {
+  assert(owned.length === 2 && owned.every((resource) => resource.relation === 'owner'), 'only owner resources should be transferable');
+  assert(approvals.length >= 1 && approvals.length <= 2, 'approval fixture should be small');
+  assert(approvals.every((approval) => approval.option === '转交'), 'approvals should use handoff semantics');
 });
 
-test('per-item assignments validate and can mix recipients', () => {
-  assert(core.validateAssignments(owned, assignments, users, 'u1').valid === true, 'eligible recipients should pass');
-  const summary = core.summarizeAssignments(owned, assignments, users);
-  assert(summary.length === 2, 'two recipients should be summarized');
-  assert(summary.map((item) => item.count).sort().join(',') === '1,1', 'each recipient should own one resource');
+test('handoff validation covers resources and approvals', () => {
+  const valid = core.validateHandoffs(owned, assignments, approvals, approvalAssignments, users, 'u1');
+  assert(valid.valid === true, 'eligible resource and approval recipients should pass');
+  const missing = core.validateHandoffs(owned, assignments, approvals, {}, users, 'u1');
+  assert(missing.valid === false && Object.keys(missing.errors).length === approvals.length, 'each missing approval recipient should fail');
   const bad = Object.assign({}, assignments, { r2: 'u3' });
-  assert(core.validateAssignments(owned, bad, users, 'u1').valid === false, 'normal user assignment must fail');
+  assert(core.validateHandoffs(owned, bad, approvals, approvalAssignments, users, 'u1').valid === false, 'normal user assignment must fail');
+  assert(typeof core.applyBatchAssignment === 'undefined', 'batch assignment helper must be removed');
 });
 
-test('batch assignment fills selected resources and single overrides remain', () => {
-  const next = core.applyBatchAssignment(owned, assignments, ['r1'], 'u4');
-  assert(next.r1 === 'u4', 'batch assignment should update selected resource');
-  assert(next.r2 === 'u4', 'unselected assignment should stay unchanged');
-  const override = core.applyBatchAssignment(owned, assignments, ['r1'], 'u2');
-  assert(override.r1 === 'u2' && override.r2 === 'u4', 'single assignment should override only its resource');
-});
-
-test('approvals are counted and all get the fixed rejection reason', () => {
-  assert(approvals.length === 8, 'approval fixture should cover every user reference type');
-  const types = approvals.map((approval) => approval.referenceType);
-  ['待办节点', '审批中节点', '发起人', '抄送人', '会签人', '加签人', '代理人', '最终发布人'].forEach((type) => {
-    assert(types.includes(type), 'missing approval reference type: ' + type);
-  });
-  assert(core.summarizeApprovals(approvals).length === 8, 'approval summary should group by type');
-  assert(approvals.every((approval) => approval.rejectionReason === '该用户已注销'), 'all approvals use fixed rejection reason');
-});
-
-test('successful deletion completes the task and records transfers', () => {
+test('successful deletion transfers resources and approvals then deletes the user', () => {
   const result = runDeletion('success');
-  assert(result.status === 'success', 'success mode should finish');
-  assert(result.userStatus === 'deleted', 'successful deletion should mark user deleted');
-  assert(result.steps.length === 5, 'task should have five backend steps');
-  assert(result.steps.every((step) => step.status === 'done'), 'all backend steps should complete');
-  assert(result.rejectionReason === '该用户已注销', 'task should record fixed rejection reason');
-  assert(result.transfers.length === 2, 'task should record both transfers');
-  assert(result.transfers.every((item) => item.assigneeId !== 'u1'), 'transfers must not go to target');
+  assert(result.status === 'success' && result.userStatus === 'deleted', 'success mode should delete user');
+  assert(result.resourcesTransferred === 2 && result.approvalsTransferred === approvals.length, 'handoffs should be recorded');
+  assert(result.transfers.every((item) => item.assigneeId !== 'u1'), 'resource transfers must not go to target');
+  assert(result.approvalTransfers.every((item) => item.assigneeId !== 'u1'), 'approval transfers must not go to target');
 });
 
-test('failures leave the user active and expose failed step for retry', () => {
-  const modes = {
-    'transfer-failure': 'transfer',
-    'approval-failure': 'approval',
-    'delete-failure': 'delete',
-  };
-  Object.keys(modes).forEach((mode) => {
-    const result = runDeletion(mode);
-    assert(result.status === 'failed', mode + ' should fail');
-    assert(result.userStatus === 'active', mode + ' must leave user active');
-    assert(result.failedStep === modes[mode], mode + ' should report the failed step');
-    const failed = result.steps.find((step) => step.key === modes[mode]);
-    assert(failed && failed.status === 'failed', mode + ' should mark its step failed');
-  });
-  const failedDelete = runDeletion('delete-failure');
-  const retried = runDeletion('retry', { retry: true, resumeFrom: failedDelete.failedStep });
-  assert(retried.status === 'success', 'retry should complete');
-  assert(retried.userStatus === 'deleted', 'successful retry deletes the user');
-  assert(retried.retried === true, 'retry should be flagged');
+test('failure keeps user active and retry returns to the same processing page', () => {
+  const failed = runDeletion('failure');
+  assert(failed.status === 'failed' && failed.userStatus === 'active', 'failure must keep user active');
+  assert(failed.failedStep === 'processing', 'failure should expose one processing failure');
+  const retried = runDeletion('failure', { retry: true });
+  assert(retried.status === 'success' && retried.userStatus === 'deleted' && retried.retried === true, 'retry should complete deletion');
 });
 
-test('deleted and missing owners fall back to placeholder identity', () => {
+test('exact account confirmation is required and Enter is suppressed', () => {
+  assert(index.includes('id="delete-account-input"') && index.includes('id="delete-confirm-error"'), 'account confirmation field is missing');
+  assert(index.includes('账号输入完全一致'), 'exact account requirement copy is missing');
+  assert(/event\.key\s*===\s*["']Enter["']/.test(index) && /preventDefault\(\)/.test(index), 'Enter must be suppressed');
+});
+
+test('deleted and missing owners use the placeholder identity', () => {
   const fallback = core.resolveUserDisplay({ users, userId: 'u1', deletedUserIds: ['u1'] });
-  assert(fallback.userId === -1 && fallback.name === '已删除用户', 'deleted owner should use placeholder');
-  assert(fallback.permissionSubject === null, 'placeholder must not become a permission subject');
-  const live = core.resolveUserDisplay({ users, userId: 'u2', deletedUserIds: ['u1'] });
-  assert(live.name === '李娜' && live.permissionSubject === 'u2', 'live user should remain permission subject');
-  const missing = core.resolveUserDisplay({ users, userId: 'missing', deletedUserIds: [] });
-  assert(missing.userId === -1, 'unknown owner should use placeholder');
-  const resource = core.resolveResourceOwner(resources, 'r1', ['u1'], users);
-  assert(resource.user.name === '已删除用户' && resource.permissionSubject === null, 'deleted owner resource must use fallback');
-  assert(core.resolveResourceOwner(resources, 'missing', ['u1'], users).error === 'resource-not-found', 'missing resource should stay not-found');
+  assert(fallback.userId === -1 && fallback.name === '已删除用户' && fallback.permissionSubject === null, 'deleted owner should use placeholder');
+  assert(core.resolveResourceOwner(resources, 'missing', [], users).error === 'resource-not-found', 'missing resource should stay not-found');
+});
+
+test('inactive recipients cannot receive resources or approvals', () => {
+  ['disabled', 'inactive', 'suspended', undefined].forEach((status) => {
+    assert(!core.isEligibleRecipient({ id: 'u7', status, roleIds: ['r-admin'] }, 'u1'), 'non-active status must not receive ownership: ' + status);
+  });
+});
+
+test('delete gate requires exact nonempty account and all handoffs', () => {
+  const request = { resources: owned, assignments, approvals, approvalAssignments, users, targetUserId: 'u1', accountInput: 'zhangwei' };
+  assert(core.canDelete(request), 'complete configuration and exact account should enable deletion');
+  ['', ' zhangwei', 'zhangwei ', 'Zhangwei', '张伟'].forEach((accountInput) => {
+    assert(!core.canDelete(Object.assign({}, request, { accountInput })), 'account must match exactly: ' + accountInput);
+  });
+  assert(!core.canDelete(Object.assign({}, request, { approvalAssignments: {} })), 'missing approval receiver must disable deletion');
+  assert(!core.canDelete(Object.assign({}, request, { assignments: {} })), 'missing resource receiver must disable deletion');
+  assert(!core.canDelete({}), 'missing target cannot pass confirmation');
+  assert(!core.canDelete(Object.assign({}, request, { account: 'spoofed', accountInput: 'spoofed' })), 'gate must derive the account from target');
+});
+
+test('execution revalidates account, recipients and target even on retry', () => {
+  const invalidAccount = runDeletion('success', { accountInput: 'wrong' });
+  assert(invalidAccount.status === 'failed' && invalidAccount.transfers.length === 0 && invalidAccount.approvalTransfers.length === 0, 'invalid account must not publish completed transfers');
+  const invalidRetry = runDeletion('failure', { retry: true, approvalAssignments: {} });
+  assert(invalidRetry.status === 'failed' && invalidRetry.userStatus === 'active', 'retry must revalidate handoffs');
+  assert(runDeletion('unsupported-mode').status === 'failed', 'unsupported scenario must fail closed');
 });
 
 if (process.exitCode) process.exit(process.exitCode);

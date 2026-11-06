@@ -1,8 +1,7 @@
-/* 用户删除流程核心逻辑：与页面解耦，可在浏览器和 Node 中直接运行 */
+/* 用户删除流程核心逻辑：与页面解耦，可在浏览器和 Node.js 中直接运行 */
 (function (root) {
   'use strict';
 
-  const REJECTION_REASON = '该用户已注销';
   const TRANSFER_ROLES = ['r-admin', 'r-sub'];
   const DELETED_USER_FALLBACK = Object.freeze({
     userId: -1,
@@ -12,43 +11,12 @@
     avatar: '删',
   });
 
-  const STEP_DEFINITIONS = [
-    { key: 'validate', label: '校验资源接收人' },
-    { key: 'transfer', label: '转让资源所有权' },
-    { key: 'approval', label: '驳回未结束审批' },
-    { key: 'delete', label: '注销用户账号' },
-    { key: 'log', label: '生成处理记录' },
-  ];
-
-  const FAILURE_STEP = {
-    'transfer-failure': 'transfer',
-    'approval-failure': 'approval',
-    'delete-failure': 'delete',
-  };
-
-  const FAILURE_MESSAGE = {
-    validate: '资源接收人校验未通过，用户暂未删除',
-    transfer: '资源转让失败，用户暂未删除',
-    approval: '未结束审批未全部处理，用户暂未删除',
-    delete: '用户注销失败，用户保持正常状态',
-    log: '处理记录生成失败，用户暂未删除',
-  };
-
-  const FAILURE_TITLE = {
-    validate: '资源接收人校验未通过',
-    transfer: '资源转让失败',
-    approval: '审批驳回失败',
-    delete: '注销用户失败',
-    log: '处理记录生成失败',
-  };
-
   function isDeletedUser(user) {
     return !user || user.deleted === true || user.status === 'deleted';
   }
 
   function isEligibleRecipient(user, targetUserId) {
-    if (!user || isDeletedUser(user)) return false;
-    if (targetUserId && user.id === targetUserId) return false;
+    if (!user || isDeletedUser(user) || user.status !== 'active' || (targetUserId && user.id === targetUserId)) return false;
     const roles = Array.isArray(user.roleIds) ? user.roleIds : [];
     return roles.some((roleId) => TRANSFER_ROLES.indexOf(roleId) !== -1);
   }
@@ -61,32 +29,41 @@
     return (resources || []).filter((resource) => resource.ownerId === userId && resource.relation === 'owner');
   }
 
-  function createAssignments(resources) {
+  function createAssignments(items) {
     const assignments = {};
-    (resources || []).forEach((resource) => { assignments[resource.id] = ''; });
+    (items || []).forEach((item) => { assignments[item.id] = ''; });
     return assignments;
   }
 
-  function validateAssignments(resources, assignments, users, targetUserId) {
+  function validateAssignments(items, assignments, users, targetUserId, label) {
     const errors = {};
     const map = assignments || {};
-    (resources || []).forEach((resource) => {
-      const assigneeId = map[resource.id];
+    (items || []).forEach((item) => {
+      const assigneeId = map[item.id];
       if (!assigneeId) {
-        errors[resource.id] = '请选择新的所有者';
+        errors[item.id] = label || '请选择接收人';
         return;
       }
       const assignee = (users || []).find((user) => user.id === assigneeId);
-      if (!assignee) errors[resource.id] = '接收人不存在';
-      else if (!isEligibleRecipient(assignee, targetUserId)) errors[resource.id] = '接收人必须是正常状态的管理员或子管理员';
+      if (!assignee) errors[item.id] = '接收人不存在';
+      else if (!isEligibleRecipient(assignee, targetUserId)) errors[item.id] = '接收人必须是正常状态的管理员或子管理员';
     });
+    return errors;
+  }
+
+  function validateHandoffs(resources, assignments, approvals, approvalAssignments, users, targetUserId) {
+    const errors = Object.assign(
+      {},
+      validateAssignments(resources, assignments, users, targetUserId, '请选择资源接收人'),
+      validateAssignments(approvals, approvalAssignments, users, targetUserId, '请选择审批接收人')
+    );
     return { valid: Object.keys(errors).length === 0, errors };
   }
 
-  function summarizeAssignments(resources, assignments, users) {
+  function summarizeAssignments(items, assignments, users) {
     const grouped = new Map();
-    (resources || []).forEach((resource) => {
-      const assigneeId = (assignments || {})[resource.id];
+    (items || []).forEach((item) => {
+      const assigneeId = (assignments || {})[item.id];
       if (!assigneeId) return;
       const assignee = (users || []).find((user) => user.id === assigneeId);
       const entry = grouped.get(assigneeId) || { userId: assigneeId, name: assignee ? assignee.name : '未知接收人', count: 0 };
@@ -98,18 +75,9 @@
 
   function createApprovals() {
     return [
-      { id: 'ap-drawing', name: '图纸发布审批', reference: '当前待办人', referenceType: '待办节点', node: '待处理' },
-      { id: 'ap-kb', name: '知识库创建审批', reference: '当前审批人', referenceType: '审批中节点', node: '审批中' },
-      { id: 'ap-agent', name: 'Agent 上线审批', reference: '发起人', referenceType: '发起人', node: '审批中' },
-      { id: 'ap-file', name: '文件发布审批', reference: '抄送人', referenceType: '抄送人', node: '已抄送' },
-      { id: 'ap-drawing-sign', name: '图纸会签审批', reference: '会签人', referenceType: '会签人', node: '会签中' },
-      { id: 'ap-agent-add', name: 'Agent 变更审批', reference: '加签人', referenceType: '加签人', node: '加签中' },
-      { id: 'ap-kb-delegate', name: '知识库授权审批', reference: '代理人', referenceType: '代理人', node: '代理处理中' },
-      { id: 'ap-drawing-final', name: '图纸终审发布', reference: '最终发布人', referenceType: '最终发布人', node: '待发布' },
-    ].map((approval) => Object.assign({}, approval, {
-      option: '驳回',
-      rejectionReason: REJECTION_REASON,
-    }));
+      { id: 'ap-drawing', name: '图纸发布审批', referenceType: '待办节点', node: '待处理', option: '转交' },
+      { id: 'ap-kb', name: '知识库创建审批', referenceType: '审批中节点', node: '审批中', option: '转交' },
+    ];
   }
 
   function summarizeApprovals(approvals) {
@@ -120,16 +88,25 @@
       if (!Object.prototype.hasOwnProperty.call(counts, type)) order.push(type);
       counts[type] = (counts[type] || 0) + 1;
     });
-    return order.map((type) => ({ type: type, count: counts[type] }));
+    return order.map((type) => ({ type, count: counts[type] }));
   }
 
-  function applyBatchAssignment(resources, assignments, resourceIds, assigneeId) {
-    const next = Object.assign({}, assignments || {});
-    const selected = new Set(resourceIds || []);
-    (resources || []).forEach((resource) => {
-      if (selected.has(resource.id)) next[resource.id] = assigneeId;
-    });
-    return next;
+  function canDelete(options) {
+    const config = options || {};
+    const validation = validateHandoffs(config.resources || [], config.assignments || {}, config.approvals || [], config.approvalAssignments || {}, config.users || [], config.targetUserId);
+    const target = (config.users || []).find((user) => user.id === config.targetUserId);
+    return !!target && validation.valid && config.accountInput === target.account;
+  }
+
+  function transferOwnership(options) {
+    const config = options || {};
+    const resource = config.resource;
+    const recipient = (config.users || []).find((user) => user.id === config.recipientId);
+    if (!resource || !isEligibleRecipient(recipient, resource.ownerId)) {
+      return { success: false, error: '请选择状态正常的管理员或子管理员，且不能是当前所有者' };
+    }
+    if (config.mode !== 'success') return { success: false, error: config.mode === 'failure' ? '所有者转移失败，请重试' : '不支持的演示路径' };
+    return { success: true, resource: Object.assign({}, resource, { ownerId: recipient.id }) };
   }
 
   function executeDeletion(options) {
@@ -137,55 +114,39 @@
     const resources = config.resources || [];
     const assignments = config.assignments || {};
     const approvals = config.approvals || [];
+    const approvalAssignments = config.approvalAssignments || {};
     const users = config.users || [];
     const targetUserId = config.targetUserId;
-    const mode = config.mode || 'success';
-    const resumeFrom = STEP_DEFINITIONS.some((step) => step.key === config.resumeFrom) ? config.resumeFrom : '';
-    const isRetry = config.retry === true && !!resumeFrom;
-
-    const validation = validateAssignments(resources, assignments, users, targetUserId);
-    const failureKey = isRetry ? '' : validation.valid ? FAILURE_STEP[mode] : 'validate';
-    const failedIndex = failureKey ? STEP_DEFINITIONS.findIndex((step) => step.key === failureKey) : -1;
-
-    const steps = STEP_DEFINITIONS.map((step, index) => {
-      const status = failedIndex === -1 || index < failedIndex ? 'done' : index === failedIndex ? 'failed' : 'pending';
-      return {
-        key: step.key,
-        label: step.label,
-        status,
-        error: status === 'failed' ? FAILURE_MESSAGE[step.key] : '',
-      };
-    });
-
-    const success = failedIndex === -1;
-    const failureKeyForResult = success ? '' : failureKey;
+    const retry = config.retry === true;
+    const validation = validateHandoffs(resources, assignments, approvals, approvalAssignments, users, targetUserId);
+    const target = users.find((user) => user.id === targetUserId);
+    const valid = validation.valid && !!target && config.accountInput === target.account;
+    const recognizedMode = config.mode === 'success' || config.mode === 'failure' || config.mode === 'retry';
+    const failed = !retry && (!recognizedMode || config.mode === 'failure');
+    const success = valid && !failed || retry && valid;
+    const error = !valid ? '所有资源和审批都需要指定合规接收人，用户暂未删除' : '处理失败，用户保持正常状态，可重试';
     return {
       taskId: 'UD-' + Date.now().toString(36).toUpperCase(),
       status: success ? 'success' : 'failed',
-      steps,
       userStatus: success ? 'deleted' : 'active',
-      rejectionReason: REJECTION_REASON,
       resourceCount: resources.length,
       approvalCount: approvals.length,
       resourcesTransferred: success ? resources.length : 0,
-      approvalsRejected: success ? approvals.length : 0,
-      failedStep: failureKeyForResult,
-      errorTitle: success ? '' : FAILURE_TITLE[failureKeyForResult],
-      error: success ? '' : FAILURE_MESSAGE[failureKeyForResult],
-      retried: isRetry,
+      approvalsTransferred: success ? approvals.length : 0,
+      failedStep: success ? '' : 'processing',
+      errorTitle: success ? '' : '删除处理失败',
+      error: success ? '' : error,
+      retried: retry,
       completedAt: new Date().toISOString(),
-      transfers: resources.map((resource) => ({
-        resourceId: resource.id,
-        name: resource.name || '',
-        type: resource.type || '',
-        assigneeId: assignments[resource.id] || '',
-      })),
+      transfers: success ? resources.map((resource) => ({ resourceId: resource.id, name: resource.name || '', type: resource.type || '', assigneeId: assignments[resource.id] || '' })) : [],
+      approvalTransfers: success ? approvals.map((approval) => ({ approvalId: approval.id, name: approval.name || '', assigneeId: approvalAssignments[approval.id] || '' })) : [],
       records: success ? [
         { key: 'transfer', label: '资源所有权', detail: resources.length + ' 项已转移' },
-        { key: 'approval', label: '未结束审批', detail: approvals.length + ' 条已驳回 · ' + REJECTION_REASON },
+        { key: 'approval', label: '未结束审批', detail: approvals.length + ' 条已转交' },
         { key: 'delete', label: '账号注销', detail: '已完成' },
       ] : [],
-      mode,
+      mode: config.mode || 'success',
+      account: config.account || '',
     };
   }
 
@@ -194,8 +155,7 @@
     const userId = config.userId;
     const deletedUserIds = config.deletedUserIds || [];
     const user = (config.users || []).find((item) => item.id === userId);
-    const deleted = deletedUserIds.indexOf(userId) !== -1 || isDeletedUser(user);
-    if (!user || deleted) {
+    if (!user || deletedUserIds.indexOf(userId) !== -1 || isDeletedUser(user)) {
       return Object.assign({}, DELETED_USER_FALLBACK, { permissionSubject: null });
     }
     return Object.assign({}, user, { permissionSubject: user.id });
@@ -203,33 +163,26 @@
 
   function resolveResourceOwner(resources, resourceId, deletedUserIds, users) {
     const resource = (resources || []).find((item) => item.id === resourceId);
-    if (!resource) {
-      return { resource: null, user: null, permissionSubject: null, error: 'resource-not-found' };
-    }
+    if (!resource) return { resource: null, user: null, permissionSubject: null, error: 'resource-not-found' };
     const owner = resolveUserDisplay({ users: users || [], userId: resource.ownerId, deletedUserIds: deletedUserIds || [] });
-    return {
-      resource: Object.assign({}, resource),
-      user: owner,
-      permissionSubject: owner.permissionSubject,
-      error: null,
-    };
+    return { resource: Object.assign({}, resource), user: owner, permissionSubject: owner.permissionSubject, error: null };
   }
 
   const api = {
-    REJECTION_REASON,
     DELETED_USER_FALLBACK,
-    STEP_DEFINITIONS: STEP_DEFINITIONS.map((step) => Object.assign({}, step)),
     isDeletedUser,
     isEligibleRecipient,
     getTransferCandidates,
     getOwnedResources,
     createAssignments,
     validateAssignments,
+    validateHandoffs,
     summarizeAssignments,
     createApprovals,
     summarizeApprovals,
-    applyBatchAssignment,
     executeDeletion,
+    canDelete,
+    transferOwnership,
     resolveUserDisplay,
     resolveResourceOwner,
   };

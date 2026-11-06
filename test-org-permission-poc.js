@@ -1,38 +1,34 @@
-const fs = require("fs");
-const path = require("path");
-const vm = require("vm");
+const fs = require('fs');
+const path = require('path');
+const assert = require('assert/strict');
+const core = require('./user-delete-core.js');
+const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
-const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
-
-function assert(condition, message) {
-  if (!condition) throw new Error(message);
+const users = [
+  { id: 'u1', account: 'zhangwei', status: 'active', roleIds: ['r-admin'] },
+  { id: 'u2', account: 'lina', status: 'active', roleIds: ['r-sub'] },
+  { id: 'u3', account: 'wangqiang', status: 'active', roleIds: ['r-user'] },
+  { id: 'u4', account: 'deleted', status: 'deleted', roleIds: ['r-admin'] },
+  { id: 'u5', account: 'disabled', status: 'disabled', roleIds: ['r-admin'] },
+];
+const resource = { id: 'kb-001', ownerId: 'u1', name: '测试知识库', relation: 'owner' };
+const request = { resource, users, recipientId: 'u2', mode: 'success' };
+assert.deepEqual(core.getTransferCandidates(users, resource.ownerId).map((user) => user.id), ['u2']);
+const success = core.transferOwnership(request);
+assert.equal(success.success, true);
+assert.equal(success.resource.ownerId, 'u2');
+assert.equal(resource.ownerId, 'u1', 'core must not mutate caller state before commit');
+assert.equal(success.resource.name, '测试知识库');
+for (const recipientId of ['u1', 'u3', 'u4', 'u5', '', 'missing']) {
+  assert.equal(core.transferOwnership({ ...request, recipientId }).success, false, 'invalid recipient must fail: ' + recipientId);
 }
-
-assert(
-  html.includes('const KB_ROLE_LABEL = { owner: "所有者", editor: "编辑者", viewer: "使用者" }'),
-  "KB role labels should be 所有者 / 编辑者 / 使用者"
-);
-assert(
-  html.includes('const KB_ASSIGNABLE_ROLES = { editor: "编辑者", viewer: "使用者" }'),
-  "only 编辑者 and 使用者 should be assignable knowledge-base roles"
-);
-assert(!html.includes("查看者"), "知识库角色「查看者」应改为「使用者」");
-assert(!html.includes('<option value="admin">'), "knowledge-base auth select should not offer 管理员");
-assert(!html.includes('<option value="owner">'), "所有者 should not be a freely assignable option");
-assert(!html.includes('role: "admin"'), "demo knowledge-base bindings should not use the admin resource role");
-assert(!html.includes('organizationRoleId: "kb-001-admin"'), "demo bindings should not keep the admin resource role id");
-assert(html.includes('role: "owner"'), "demo data should include a default owner member");
-assert(html.includes("张三"), "default owner demo member should remain 张三");
-assert(html.includes('class="owner-badge">所有者</span>'), "owner role should render as a fixed badge");
-assert(html.includes("所有者由创建者固定担任，不能移除"), "removing the owner should be blocked");
-assert(html.includes('name: "管理员"'), "feature role 管理员 should stay");
-assert(html.includes('role: "editor"'), "editor demo binding should remain");
-assert(html.includes('role: "viewer"'), "viewer value should remain the lowest-privilege read role");
-assert(html.includes('return ["kb:read"]'), "使用者 should keep the viewer read scope");
-assert(!/role === "admin" \? \["kb:read"/.test(html), "admin resource role should not have a scope mapping");
-
-const script = html.match(/<script>\s*([\s\S]*?)<\/script>\s*<\/body>/);
-assert(script, "page script should be extractable");
-new vm.Script(script[1], { filename: "index.html" });
-
-console.log("knowledge-base resource role smoke test passed");
+assert.equal(core.transferOwnership({ ...request, mode: 'failure' }).success, false);
+assert.equal(resource.ownerId, 'u1', 'failure must preserve original owner');
+assert.equal(core.transferOwnership({ ...request, mode: 'unknown' }).success, false);
+assert(html.includes('id="btn-transfer-kb-owner"') && html.includes('id="modal-kb-owner-transfer"'));
+assert(html.includes('id="kb-owner-name"'), 'current owner must be displayed');
+assert(!html.includes('<option value="owner">'), 'normal authorization cannot directly assign owner');
+assert(html.includes('member.role !== "owner"'), 'normal role editor must preserve owner');
+assert(html.includes('item.account !== id || item.role === "owner"'), 'normal authorization removal must preserve owner');
+assert(html.includes('const KB_ROLE_LABEL = { owner: "所有者", editor: "编辑者", viewer: "使用者" }'));
+console.log('knowledge-base owner transfer tests passed');
