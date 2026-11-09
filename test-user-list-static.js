@@ -39,6 +39,8 @@ const searchFn = html.match(/function currentUserResults\(\) \{[\s\S]*?return li
 check(!!(searchFn && searchFn[0].includes('customerInfo')), 'user search should match serialized customerInfo');
 check(html.includes('>用户管理</span>') || /用户管理\s*<\/button>/.test(html), 'sidebar should show 用户管理');
 check(html.includes('>用户列表</h1>'), 'page heading should be 用户列表');
+check(html.includes('<h2>组织信息</h2>'), 'organization tree heading should be 组织信息');
+check(!html.includes('<div class="breadcrumb">'), 'topbar should not repeat the AI应用平台 label');
 
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>\s*<\/body>/g)];
 if (!scripts.length) failures.push('page script should be extractable');
