@@ -1284,7 +1284,7 @@ table.data tr:hover td { background: #fafafa; }
   .delete-section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:9px; }
   .delete-section-head h5 { margin:0; font-size:14px; font-weight:600; }
   .delete-section-note { color:var(--text-tertiary); font-size:12px; }
-  .delete-table-wrap { border:1px solid var(--border); border-radius:8px; overflow:auto; }
+  .delete-table-wrap { border:1px solid var(--border); border-radius:8px; overflow:visible; }
   .delete-table { width:100%; border-collapse:collapse; font-size:13px; }
   .delete-table th { text-align:left; padding:9px 12px; background:#fafafa; color:var(--text-tertiary); font-weight:500; white-space:nowrap; border-bottom:1px solid var(--border); }
   .delete-table td { padding:11px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
@@ -2965,8 +2965,10 @@ table.data tr:hover td { background: #fafafa; }
       const kind = search.dataset.recipientKind;
       const itemId = search.dataset.itemId;
       const currentId = kind === 'resource' ? deleteFlow.assignments[itemId] : deleteFlow.approvalAssignments[itemId];
+      const currentRecipient = users.find((user) => user.id === currentId);
+      const selectedDisplay = currentRecipient ? currentRecipient.name + '（' + roleText(currentRecipient.roleIds) + '）' : '';
       const candidates = deleteCore().getTransferCandidates(users, deleteFlow.user.id).filter((user) => {
-        const q = input.value.trim().toLowerCase();
+        const q = input.value === selectedDisplay ? '' : input.value.trim().toLowerCase();
         return !q || user.name.toLowerCase().includes(q) || user.account.toLowerCase().includes(q);
       });
       list.innerHTML = candidates.length ? candidates.map((user) => '<button type="button" class="assign-search-option ' + (user.id === currentId ? 'selected' : '') + '" data-recipient-id="' + escapeHtml(user.id) + '">' + escapeHtml(user.name) + '（' + escapeHtml(roleText(user.roleIds)) + '）</button>').join('') : '<div class="assign-search-empty">未找到可用接收人</div>';
@@ -2995,7 +2997,10 @@ table.data tr:hover td { background: #fafafa; }
     }
     document.getElementById("delete-resource-list").innerHTML = rows(deleteFlow.resources, deleteFlow.assignments, "data-assign-resource", "所有者资源", deleteFlow.resourcePage);
     document.getElementById("delete-approval-list").innerHTML = rows(deleteFlow.approvals, deleteFlow.approvalAssignments, "data-assign-approval", "当前节点审核单", deleteFlow.approvalPage);
-    document.querySelectorAll('.assign-search-input').forEach((input) => input.addEventListener('focus', () => renderRecipientSearches(input.closest('.assign-search'))));
+    document.querySelectorAll('.assign-search-input').forEach((input) => input.addEventListener('focus', () => {
+      if (typeof input.select === 'function') input.select();
+      renderRecipientSearches(input.closest('.assign-search'));
+    }));
     document.querySelectorAll('.assign-search-input').forEach((input) => input.addEventListener('input', () => renderRecipientSearches(input.closest('.assign-search'))));
     document.querySelectorAll('.assign-search-input').forEach((input) => input.addEventListener('change', () => {
       const search = input;
@@ -3017,7 +3022,7 @@ table.data tr:hover td { background: #fafafa; }
     const pager = document.getElementById(id);
     const pages = Math.max(1, Math.ceil(total / DELETE_PAGE_SIZE));
     pager.innerHTML = '<button type="button" data-page="prev" ' + (page === 1 ? 'disabled' : '') + '>‹</button><span>' + page + ' / ' + pages + '</span><button type="button" data-page="next" ' + (page === pages ? 'disabled' : '') + '>›</button>';
-    const buttons = Array.from(document.querySelectorAll('[data-page]')).filter((button) => button.parent === pager);
+    const buttons = Array.from(document.querySelectorAll('[data-page]')).filter((button) => (button.parentNode || button.parent) === pager);
     const prev = buttons.find((button) => button.getAttribute('data-page') === 'prev');
     const next = buttons.find((button) => button.getAttribute('data-page') === 'next');
     if (prev) prev.onclick = () => onChange(page - 1); if (next) next.onclick = () => onChange(page + 1);
