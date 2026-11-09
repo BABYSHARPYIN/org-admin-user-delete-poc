@@ -37,6 +37,11 @@ check(
 check(!html.includes("（预置）"), "账号类型 options should use the role names without a （预置） suffix");
 const kbTable = html.match(/<table class="data">[\s\S]*?<tbody id="kb-member-tbody">/);
 check(kbTable && kbTable[0].includes("<th>角色</th>"), "knowledge-base auth table should keep the resource column 角色");
+check(kbTable && !kbTable[0].includes("组织信息"), "knowledge-base member table should not include an 组织信息 column");
+check(
+  kbTable && /<th>成员<\/th>\s*<th>角色<\/th>\s*<th>操作<\/th>/.test(kbTable[0]),
+  "knowledge-base member columns should be 成员 / 角色 / 操作"
+);
 
 check(!html.includes("当前组织"), "user list should not show the 当前组织 breadcrumb");
 check(!html.includes("清除选择"), "user list should not show 清除选择");
@@ -365,8 +370,8 @@ async function main() {
       };
     })()`);
     check(
-      kb.headers.join(" / ") === "成员 / 组织信息 / 角色 / 操作",
-      "knowledge-base columns should stay unchanged, got " + kb.headers.join(" / ")
+      kb.headers.join(" / ") === "成员 / 角色 / 操作",
+      "knowledge-base member columns should be 成员 / 角色 / 操作, got " + kb.headers.join(" / ")
     );
     check(kb.hasEditor && kb.hasViewer && kb.hasOwner, "knowledge-base resource roles should stay 编辑者 / 使用者 / 所有者");
     check(!kb.forbidden, "knowledge-base page should not introduce 功能角色");

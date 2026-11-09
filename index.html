@@ -1533,7 +1533,6 @@ table.data tr:hover td { background: #fafafa; }
                     <thead>
                       <tr>
                         <th>成员</th>
-                        <th>组织信息</th>
                         <th>角色</th>
                         <th>操作</th>
                       </tr>
@@ -1696,7 +1695,7 @@ table.data tr:hover td { background: #fafafa; }
       </div>
       <div class="modal-footer">
         <button class="btn" type="button" data-close="modal-kb-owner-transfer">取消</button>
-        <button class="btn btn-primary" type="button" id="btn-confirm-kb-owner" disabled>确认转移</button>
+        <button class="btn btn-primary" type="button" id="btn-confirm-kb-owner" disabled>确定</button>
       </div>
     </div>
   </div>
@@ -2807,10 +2806,10 @@ table.data tr:hover td { background: #fafafa; }
             <option value="viewer" ${row.role === "viewer" ? "selected" : ""}>使用者</option>
           </select>`;
       const action = row.locked
-        ? `<button class="link-danger link-transfer" type="button" id="btn-transfer-kb-owner">转移所有者</button>`
+        ? `<button class="link-danger link-transfer" type="button" id="btn-transfer-kb-owner">转让</button>`
         : `<button class="link-danger" type="button" data-remove-kind="${row.kind}" data-remove-id="${escapeHtml(row.id)}">移除</button>`;
-      return `<tr><td>${member}</td><td>${escapeHtml(row.orgInfo)}</td><td>${roleCell}</td><td>${action}</td></tr>`;
-    }).join("") : `<tr><td colspan="4" class="muted">暂无数据</td></tr>`;
+      return `<tr><td>${member}</td><td>${roleCell}</td><td>${action}</td></tr>`;
+    }).join("") : `<tr><td colspan="3" class="muted">暂无数据</td></tr>`;
 
     tbody.querySelectorAll("#btn-transfer-kb-owner").forEach((btn) => {
       btn.addEventListener("click", openKbOwnerTransfer);
@@ -3159,37 +3158,30 @@ table.data tr:hover td { background: #fafafa; }
   });
 
   function openKbOwnerTransfer() {
-    const kb = demoResources.find((resource) => resource.id === "kb-001");
-    document.getElementById("kb-owner-search").value = "";
-    document.getElementById("kb-owner-search").dataset.selectedId = "";
-    renderKbOwnerCandidates(kb.ownerId, "");
+    const search = document.getElementById("kb-owner-search");
+    search.value = "";
+    search.dataset.selectedId = "";
+    document.getElementById("kb-owner-candidates").innerHTML = "";
     document.getElementById("kb-owner-error").classList.remove("show");
     document.getElementById("btn-confirm-kb-owner").disabled = true;
     openModal("modal-kb-owner-transfer");
   }
 
-  function renderKbOwnerCandidates(excludedId, query) {
-    const q = (query || "").trim().toLowerCase();
-    const candidates = deleteCore().getTransferCandidates(users, excludedId).filter((user) =>
-      !q || user.name.toLowerCase().includes(q) || user.account.toLowerCase().includes(q));
-    document.getElementById("kb-owner-candidates").innerHTML = candidates.length ? candidates.map((user) =>
-      '<button type="button" class="kb-owner-candidate" data-owner-recipient="' + escapeHtml(user.id) + '" role="option">' +
-      '<strong>' + escapeHtml(user.name) + '</strong><span>' + escapeHtml(user.account) + ' · ' + escapeHtml(roleText(user.roleIds)) + '</span></button>').join("") :
-      '<div class="kb-owner-empty">未找到可转让的管理员或子管理员</div>';
-    document.querySelectorAll("[data-owner-recipient]").forEach((candidate) => candidate.addEventListener("click", () => {
-      const search = document.getElementById("kb-owner-search");
-      const recipient = users.find((user) => user.id === candidate.dataset.ownerRecipient);
-      search.value = recipient ? recipient.name + "（" + recipient.account + "）" : "";
-      search.dataset.selectedId = candidate.dataset.ownerRecipient;
-      document.querySelectorAll("[data-owner-recipient]").forEach((item) => item.classList.toggle("selected", item === candidate));
-      document.getElementById("btn-confirm-kb-owner").disabled = false;
-    }));
-  }
-  document.getElementById("kb-owner-search").addEventListener("input", (event) => {
+  function syncKbOwnerRecipient(query) {
     const kb = demoResources.find((resource) => resource.id === "kb-001");
-    event.target.dataset.selectedId = "";
-    document.getElementById("btn-confirm-kb-owner").disabled = true;
-    renderKbOwnerCandidates(kb.ownerId, event.target.value);
+    const q = (query || "").trim().toLowerCase();
+    const matches = q ? deleteCore().getTransferCandidates(users, kb.ownerId).filter((user) =>
+      user.name.toLowerCase() === q || user.account.toLowerCase() === q) : [];
+    const recipient = matches.length === 1 ? matches[0] : null;
+    const search = document.getElementById("kb-owner-search");
+    search.dataset.selectedId = recipient ? recipient.id : "";
+    document.getElementById("kb-owner-candidates").innerHTML = "";
+    document.getElementById("btn-confirm-kb-owner").disabled = !recipient;
+  }
+
+  document.getElementById("kb-owner-search").addEventListener("input", (event) => {
+    document.getElementById("kb-owner-error").classList.remove("show");
+    syncKbOwnerRecipient(event.target.value);
   });
   document.getElementById("btn-confirm-kb-owner").addEventListener("click", () => {
     const kb = demoResources.find((resource) => resource.id === "kb-001");

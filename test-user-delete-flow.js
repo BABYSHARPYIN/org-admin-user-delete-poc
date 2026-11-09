@@ -100,8 +100,15 @@ test('knowledge base owner transfer entry and modal are present', () => {
   assert(index.includes('id="btn-transfer-kb-owner"'), 'knowledge-base owner transfer entry is missing');
   assert(index.includes('id="modal-kb-owner-transfer"'), 'knowledge-base owner transfer modal is missing');
   assert(index.includes('<h3 id="kb-owner-transfer-title">知识库转让</h3>'), 'knowledge-base transfer dialog title is missing');
-  assert(index.includes('id="kb-owner-search"') && index.includes('id="kb-owner-candidates"'), 'knowledge-base owner recipient picker is missing');
-  assert(index.includes('转移所有者'), 'knowledge-base owner transfer copy is missing');
+  assert(index.includes('id="kb-owner-search"') && index.includes('id="kb-owner-candidates"'), 'knowledge-base owner recipient search is missing');
+  assert(index.includes('id="btn-transfer-kb-owner">转让</button>'), 'owner row action must be 转让');
+  assert(!index.includes('转移所有者</button>'), 'owner row action must not stay 转移所有者');
+  assert(!/class="kb-owner-candidate"|data-owner-recipient/.test(index), 'knowledge-base transfer must not render suggested-name chips');
+  assert(index.includes('id="btn-confirm-kb-owner" disabled>确定</button>'), 'knowledge-base transfer confirm button must be 确定');
+  assert(!index.includes('确认转移'), 'knowledge-base transfer confirm button must not stay 确认转移');
+  const kbMemberTable = index.match(/<table class="data">\s*<thead>[\s\S]*?<\/thead>\s*<tbody id="kb-member-tbody">/);
+  assert(kbMemberTable && /<th>成员<\/th>\s*<th>角色<\/th>\s*<th>操作<\/th>/.test(kbMemberTable[0]), 'member table columns should be 成员 / 角色 / 操作');
+  assert(kbMemberTable && !kbMemberTable[0].includes('组织信息'), 'member table must not include 组织信息');
   assert(index.includes('class="kb-instance-side"') && index.includes('class="kb-instance-tab active"'), 'knowledge-base page should reuse the system settings layout');
   assert(index.includes('var(--primary-bg)') && index.includes('var(--border)'), 'knowledge-base styling should use the existing admin tokens');
 });
