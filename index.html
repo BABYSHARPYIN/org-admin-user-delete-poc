@@ -3167,21 +3167,31 @@ table.data tr:hover td { background: #fafafa; }
     openModal("modal-kb-owner-transfer");
   }
 
-  function syncKbOwnerRecipient(query) {
-    const kb = demoResources.find((resource) => resource.id === "kb-001");
+  function renderKbOwnerCandidates(excludedId, query) {
     const q = (query || "").trim().toLowerCase();
-    const matches = q ? deleteCore().getTransferCandidates(users, kb.ownerId).filter((user) =>
-      user.name.toLowerCase() === q || user.account.toLowerCase() === q) : [];
-    const recipient = matches.length === 1 ? matches[0] : null;
-    const search = document.getElementById("kb-owner-search");
-    search.dataset.selectedId = recipient ? recipient.id : "";
-    document.getElementById("kb-owner-candidates").innerHTML = "";
-    document.getElementById("btn-confirm-kb-owner").disabled = !recipient;
+    const candidates = deleteCore().getTransferCandidates(users, excludedId).filter((user) =>
+      !q || user.name.toLowerCase().includes(q) || user.account.toLowerCase().includes(q));
+    const container = document.getElementById("kb-owner-candidates");
+    container.innerHTML = candidates.length ? candidates.map((user) =>
+      '<button type="button" class="kb-owner-candidate" data-owner-recipient="' + escapeHtml(user.id) + '" role="option">' +
+      '<strong>' + escapeHtml(user.name) + '</strong><span>' + escapeHtml(user.account) + ' · ' + escapeHtml(roleText(user.roleIds)) + '</span></button>').join("") :
+      (q ? '<div class="kb-owner-empty">未找到可转让的管理员或子管理员</div>' : "");
+    container.querySelectorAll("[data-owner-recipient]").forEach((candidate) => candidate.addEventListener("click", () => {
+      const search = document.getElementById("kb-owner-search");
+      const recipient = users.find((user) => user.id === candidate.dataset.ownerRecipient);
+      search.value = recipient ? recipient.name + "（" + recipient.account + "）" : "";
+      search.dataset.selectedId = candidate.dataset.ownerRecipient;
+      container.querySelectorAll("[data-owner-recipient]").forEach((item) => item.classList.toggle("selected", item === candidate));
+      document.getElementById("btn-confirm-kb-owner").disabled = false;
+    }));
   }
 
   document.getElementById("kb-owner-search").addEventListener("input", (event) => {
+    const kb = demoResources.find((resource) => resource.id === "kb-001");
     document.getElementById("kb-owner-error").classList.remove("show");
-    syncKbOwnerRecipient(event.target.value);
+    event.target.dataset.selectedId = "";
+    document.getElementById("btn-confirm-kb-owner").disabled = true;
+    renderKbOwnerCandidates(kb.ownerId, event.target.value);
   });
   document.getElementById("btn-confirm-kb-owner").addEventListener("click", () => {
     const kb = demoResources.find((resource) => resource.id === "kb-001");

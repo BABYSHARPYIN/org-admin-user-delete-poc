@@ -103,7 +103,7 @@ test('knowledge base owner transfer entry and modal are present', () => {
   assert(index.includes('id="kb-owner-search"') && index.includes('id="kb-owner-candidates"'), 'knowledge-base owner recipient search is missing');
   assert(index.includes('id="btn-transfer-kb-owner">转让</button>'), 'owner row action must be 转让');
   assert(!index.includes('转移所有者</button>'), 'owner row action must not stay 转移所有者');
-  assert(!/class="kb-owner-candidate"|data-owner-recipient/.test(index), 'knowledge-base transfer must not render suggested-name chips');
+  assert(index.includes('data-owner-recipient') && index.includes('role="option"'), 'knowledge-base transfer must render selectable matching recipients');
   assert(index.includes('id="btn-confirm-kb-owner" disabled>确定</button>'), 'knowledge-base transfer confirm button must be 确定');
   assert(!index.includes('确认转移'), 'knowledge-base transfer confirm button must not stay 确认转移');
   const kbMemberTable = index.match(/<table class="data">\s*<thead>[\s\S]*?<\/thead>\s*<tbody id="kb-member-tbody">/);
