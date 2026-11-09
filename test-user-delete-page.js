@@ -95,7 +95,7 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   const page = loadPage(undefined, { createApprovalHistory: undefined });
   assert(page.select('[data-view]').length >= 10, 'cached core without the optional history factory must still render the user list');
   page.openUser('u1');
-  assert.equal(page.select('[data-assign-approval]').length, 2);
+  assert.equal(page.select('[data-assign-approval]').length, 1);
   page.assign();
   page.input('zhangwei');
   page.get('btn-delete-account-confirm').click();
@@ -107,7 +107,7 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   page.openUser('u1');
   assert(page.get('delete-wizard').classList.contains('show'));
   assert.equal(page.select('[data-assign-resource]').length, 2, 'demo should have two owned resources');
-  assert.equal(page.select('[data-assign-approval]').length, 2, 'demo should have two approvals');
+  assert.equal(page.select('[data-assign-approval]').length, 1, 'demo should have one in-progress approval');
   assert(!page.get('delete-approval-list').innerHTML.includes('图纸归档审批'), 'historical nodes must not appear in the handoff list');
   page.input('zhangwei');
   assert(page.get('btn-delete-account-confirm').disabled, 'exact account alone cannot enable deletion');
@@ -129,7 +129,7 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   assert(!page.get('delete-wizard').classList.contains('show'), 'repeated confirmation must keep the dialog closed');
   page.openUser('u2');
   assert.equal(page.select('[data-assign-resource]').length, 2, 'recipient must now own transferred resources');
-  assert.equal(page.select('[data-assign-approval]').length, 2, 'recipient must now receive transferred approvals');
+  assert.equal(page.select('[data-assign-approval]').length, 1, 'recipient must now receive transferred approvals');
   assert.equal(page.get('delete-account-input').value, '', 'new deletion must reset account');
   assert.equal(page.get('delete-account-input').disabled, false);
 }

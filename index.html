@@ -1295,6 +1295,15 @@ table.data tr:hover td { background: #fafafa; }
   .assign-select { min-width:156px; height:30px; border:1px solid var(--border-strong); border-radius:6px; padding:0 8px; background:#fff; color:var(--text); outline:none; }
   .assign-select:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
   .assign-select.error { border-color:var(--danger); }
+  .assign-search { position:relative; min-width:190px; }
+  .assign-search-input { width:100%; height:30px; }
+  .assign-search-list { position:absolute; left:0; right:0; top:34px; z-index:5; max-height:180px; overflow:auto; background:#fff; border:1px solid var(--border-strong); border-radius:6px; box-shadow:0 8px 20px rgba(0,0,0,.12); }
+  .assign-search-option { display:block; width:100%; border:0; background:#fff; text-align:left; padding:8px 10px; cursor:pointer; color:var(--text); }
+  .assign-search-option:hover, .assign-search-option.selected { background:var(--primary-bg); color:var(--link); }
+  .assign-search-empty { padding:9px 10px; color:var(--text-tertiary); font-size:12px; }
+  .delete-list-pager { display:flex; justify-content:flex-end; align-items:center; gap:8px; padding:8px 10px; color:var(--text-tertiary); font-size:12px; border-top:1px solid var(--border); }
+  .delete-list-pager button { min-width:28px; height:28px; padding:0 7px; border:1px solid var(--border-strong); border-radius:5px; background:#fff; color:var(--text-secondary); cursor:pointer; }
+  .delete-list-pager button:disabled { opacity:.45; cursor:not-allowed; }
   .assign-error { color:var(--danger); font-size:12px; margin-top:4px; }
   .account-confirm { margin-top:18px; max-width:560px; }
   .account-confirm label { display:block; margin-bottom:7px; font-size:13px; font-weight:500; }
@@ -1619,30 +1628,30 @@ table.data tr:hover td { background: #fafafa; }
       </div>
       <div class="delete-body">
         <section class="delete-page" data-flow-page="delete">
-          <p class="delete-final-warning">请逐项指定资源和当前节点审核转让接收人，再输入账号确认。接收人须为状态正常的管理员或子管理员，且不能是待删除用户。</p>
           <div class="delete-section">
-            <div class="delete-section-head"><h5>所有者资源</h5><span class="delete-section-note">仅转移所有者资源，编辑权无需配置</span></div>
+            <div class="delete-section-head"><h5>资源列表</h5></div>
             <div class="delete-table-wrap">
               <table class="delete-table">
                 <thead><tr><th>资源</th><th>类型</th><th>接收人</th></tr></thead>
                 <tbody id="delete-resource-list"></tbody>
               </table>
+              <div class="delete-list-pager" id="delete-resource-pager"></div>
             </div>
           </div>
           <div class="delete-section">
-            <div class="delete-section-head"><h5>当前节点审核转让</h5><span class="delete-section-note">每条指定一名接收人</span></div>
+            <div class="delete-section-head"><h5>审核列表</h5></div>
             <div class="delete-table-wrap">
               <table class="delete-table">
-                <thead><tr><th>审核</th><th>当前节点</th><th>接收人</th></tr></thead>
+                <thead><tr><th>审核</th><th>状态</th><th>接收人</th></tr></thead>
                 <tbody id="delete-approval-list"></tbody>
               </table>
+              <div class="delete-list-pager" id="delete-approval-pager"></div>
             </div>
           </div>
           <div class="account-confirm">
             <label for="delete-account-input">输入账号 <span class="required-account" id="delete-account-hint"></span> 以确认删除</label>
             <input class="input" id="delete-account-input" autocomplete="off" spellcheck="false" placeholder="请输入完整账号" aria-describedby="delete-confirm-error" />
             <div class="field-error" id="delete-confirm-error" role="alert">账号输入完全一致后才能删除</div>
-            <p class="delete-final-warning">删除后账号无法登录。只有全部资源和当前节点审核转让成功才会注销账号；历史节点由审核节点兜底处理。按 Enter 不会提交。</p>
           </div>
           <div class="delete-failure" id="delete-failure" role="alert" tabindex="-1" hidden>
             <div class="delete-failure-head">
@@ -1663,7 +1672,7 @@ table.data tr:hover td { background: #fafafa; }
         </section>
       </div>
       <div class="delete-footer">
-        <span class="delete-footer-note" id="delete-footer-note">配齐接收人且账号完全匹配后可删除</span>
+        <span class="delete-footer-note" id="delete-footer-note" aria-hidden="true"></span>
         <span class="sr-only">删除后缺失用户的资源统一使用「已删除用户」，user_id = -1。</span>
         <button class="btn last-record-btn" type="button" id="btn-view-last-record">查看处理记录</button>
         <button class="btn btn-danger-solid" type="button" id="btn-delete-account-confirm" disabled>确认删除</button>
@@ -1674,15 +1683,14 @@ table.data tr:hover td { background: #fafafa; }
   <div class="modal-mask" id="modal-kb-owner-transfer">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="kb-owner-transfer-title">
       <div class="modal-header">
-        <h3 id="kb-owner-transfer-title">转移所有者</h3>
+        <h3 id="kb-owner-transfer-title">知识库转让</h3>
         <button class="btn-icon" type="button" data-close="modal-kb-owner-transfer" aria-label="关闭">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-row">
           <label for="kb-owner-search">接收人</label>
-          <input class="input" id="kb-owner-search" placeholder="搜索姓名或账号" autocomplete="off" aria-describedby="kb-owner-transfer-help" />
+          <input class="input" id="kb-owner-search" placeholder="搜索姓名或账号" autocomplete="off" />
           <div class="kb-owner-candidates" id="kb-owner-candidates" role="listbox" aria-label="所有者接收人"></div>
-          <p class="delete-final-warning" id="kb-owner-transfer-help">请选择状态正常的管理员或子管理员，不能选择当前所有者。转移后原所有者保留编辑权限。</p>
         </div>
         <div class="field-error" id="kb-owner-error" role="alert"></div>
       </div>
@@ -2929,39 +2937,90 @@ table.data tr:hover td { background: #fafafa; }
     assignments: {},
     approvalAssignments: {},
     result: null,
+    resourcePage: 1,
+    approvalPage: 1,
   };
+
+  const DELETE_PAGE_SIZE = 5;
 
   function deleteCore() {
     return window.UserDeleteCore;
   }
 
-  function recipientOptions(excludedId, selectedId) {
-    return '<option value="">请选择接收人</option>' + deleteCore().getTransferCandidates(users, excludedId).map((user) => {
-      const roleNames = (user.roleIds || []).map((id) => { const role = roles.find((item) => item.id === id); return role ? role.name : ""; }).filter(Boolean).join("、");
-      return '<option value="' + escapeHtml(user.id) + '"' + (user.id === selectedId ? ' selected' : '') + '>' +
-        escapeHtml(user.name) + '（' + escapeHtml(roleNames) + '）</option>';
-    }).join("");
+  function recipientSearch(excludedId, selectedId, attribute, itemId, label) {
+    const selected = users.find((user) => user.id === selectedId);
+    const display = selected ? selected.name + '（' + roleText(selected.roleIds) + '）' : '';
+    const kind = attribute === 'data-assign-resource' ? 'resource' : 'approval';
+    return '<div class="assign-search" data-recipient-kind="' + kind + '" data-item-id="' + escapeHtml(itemId) + '" data-excluded-id="' + escapeHtml(excludedId) + '">' +
+      '<input class="input assign-search-input" data-recipient-kind="' + kind + '" data-item-id="' + escapeHtml(itemId) + '" ' + attribute + '="' + escapeHtml(itemId) + '" value="' + escapeHtml(display) + '" placeholder="搜索接收人" autocomplete="off" aria-label="' + escapeHtml(label) + ' 接收人">' +
+      '<div class="assign-search-list" hidden></div></div>';
+  }
+
+  function renderRecipientSearches(activeSearch) {
+    document.querySelectorAll('.assign-search-list').forEach((list) => { list.hidden = true; });
+    const searches = activeSearch ? [activeSearch] : Array.from(document.querySelectorAll('.assign-search'));
+    searches.forEach((search) => {
+      const input = search.querySelector('.assign-search-input');
+      const list = search.querySelector('.assign-search-list');
+      const kind = search.dataset.recipientKind;
+      const itemId = search.dataset.itemId;
+      const currentId = kind === 'resource' ? deleteFlow.assignments[itemId] : deleteFlow.approvalAssignments[itemId];
+      const candidates = deleteCore().getTransferCandidates(users, deleteFlow.user.id).filter((user) => {
+        const q = input.value.trim().toLowerCase();
+        return !q || user.name.toLowerCase().includes(q) || user.account.toLowerCase().includes(q);
+      });
+      list.innerHTML = candidates.length ? candidates.map((user) => '<button type="button" class="assign-search-option ' + (user.id === currentId ? 'selected' : '') + '" data-recipient-id="' + escapeHtml(user.id) + '">' + escapeHtml(user.name) + '（' + escapeHtml(roleText(user.roleIds)) + '）</button>').join('') : '<div class="assign-search-empty">未找到可用接收人</div>';
+      list.hidden = false;
+      list.querySelectorAll('[data-recipient-id]').forEach((option) => option.addEventListener('click', () => {
+        const id = option.dataset.recipientId;
+        const user = users.find((item) => item.id === id);
+        input.value = user.name + '（' + roleText(user.roleIds) + '）';
+        list.hidden = true;
+        if (kind === 'resource') deleteFlow.assignments[itemId] = id;
+        else deleteFlow.approvalAssignments[itemId] = id;
+        syncDeleteConfirmButton();
+      }));
+    });
   }
 
   function renderDeleteAssignments() {
     const complete = deleteFlow.result && deleteFlow.result.status === "success";
-    function rows(items, assignments, attribute, typeLabel) {
-      return items.length ? items.map((item) =>
-        '<tr><td class="resource-name">' + escapeHtml(item.name) + '</td><td>' + escapeHtml(item.type || item.node) +
-        '</td><td><select class="assign-select" ' + attribute + '="' + escapeHtml(item.id) + '" aria-label="' +
-        escapeHtml(item.name) + ' 接收人"' + (complete ? ' disabled' : '') + '>' +
-        recipientOptions(deleteFlow.user.id, assignments[item.id]) + '</select></td></tr>').join("") :
+    function rows(items, assignments, attribute, typeLabel, page) {
+      const start = (page - 1) * DELETE_PAGE_SIZE;
+      const visible = items.slice(start, start + DELETE_PAGE_SIZE);
+      return items.length ? visible.map((item) =>
+        '<tr><td class="resource-name">' + escapeHtml(item.name) + '</td><td>' + escapeHtml(item.type || item.status || '审核中') +
+        '</td><td>' + recipientSearch(deleteFlow.user.id, assignments[item.id], attribute, item.id, item.name) + '</td></tr>').join("") :
         '<tr><td colspan="3" class="delete-empty">没有需要转交的' + typeLabel + '</td></tr>';
     }
-    document.getElementById("delete-resource-list").innerHTML = rows(deleteFlow.resources, deleteFlow.assignments, "data-assign-resource", "所有者资源");
-    document.getElementById("delete-approval-list").innerHTML = rows(deleteFlow.approvals, deleteFlow.approvalAssignments, "data-assign-approval", "当前节点审核单");
-    document.querySelectorAll("[data-assign-resource], [data-assign-approval]").forEach((select) => {
-      select.addEventListener("change", () => {
-        if (select.dataset.assignResource) deleteFlow.assignments[select.dataset.assignResource] = select.value;
-        else deleteFlow.approvalAssignments[select.dataset.assignApproval] = select.value;
+    document.getElementById("delete-resource-list").innerHTML = rows(deleteFlow.resources, deleteFlow.assignments, "data-assign-resource", "所有者资源", deleteFlow.resourcePage);
+    document.getElementById("delete-approval-list").innerHTML = rows(deleteFlow.approvals, deleteFlow.approvalAssignments, "data-assign-approval", "当前节点审核单", deleteFlow.approvalPage);
+    document.querySelectorAll('.assign-search-input').forEach((input) => input.addEventListener('focus', () => renderRecipientSearches(input.closest('.assign-search'))));
+    document.querySelectorAll('.assign-search-input').forEach((input) => input.addEventListener('input', () => renderRecipientSearches(input.closest('.assign-search'))));
+    document.querySelectorAll('.assign-search-input').forEach((input) => input.addEventListener('change', () => {
+      const search = input;
+      const q = input.value.trim().toLowerCase();
+      const candidate = deleteCore().getTransferCandidates(users, deleteFlow.user.id).find((user) =>
+        user.id.toLowerCase() === q || user.account.toLowerCase() === q || user.name.toLowerCase() === q);
+      if (candidate) {
+        if (search.dataset.recipientKind === 'resource') deleteFlow.assignments[search.dataset.itemId] = candidate.id;
+        else deleteFlow.approvalAssignments[search.dataset.itemId] = candidate.id;
+        input.value = candidate.name + '（' + roleText(candidate.roleIds) + '）';
         syncDeleteConfirmButton();
-      });
-    });
+      }
+    }));
+    renderDeletePager('delete-resource-pager', deleteFlow.resources.length, deleteFlow.resourcePage, (page) => { deleteFlow.resourcePage = page; renderDeleteAssignments(); });
+    renderDeletePager('delete-approval-pager', deleteFlow.approvals.length, deleteFlow.approvalPage, (page) => { deleteFlow.approvalPage = page; renderDeleteAssignments(); });
+  }
+
+  function renderDeletePager(id, total, page, onChange) {
+    const pager = document.getElementById(id);
+    const pages = Math.max(1, Math.ceil(total / DELETE_PAGE_SIZE));
+    pager.innerHTML = '<button type="button" data-page="prev" ' + (page === 1 ? 'disabled' : '') + '>‹</button><span>' + page + ' / ' + pages + '</span><button type="button" data-page="next" ' + (page === pages ? 'disabled' : '') + '>›</button>';
+    const buttons = Array.from(document.querySelectorAll('[data-page]')).filter((button) => button.parent === pager);
+    const prev = buttons.find((button) => button.getAttribute('data-page') === 'prev');
+    const next = buttons.find((button) => button.getAttribute('data-page') === 'next');
+    if (prev) prev.onclick = () => onChange(page - 1); if (next) next.onclick = () => onChange(page + 1);
   }
 
   function deletionRequest() {
@@ -3001,6 +3060,8 @@ table.data tr:hover td { background: #fafafa; }
     deleteFlow.assignments = deleteCore().createAssignments(deleteFlow.resources);
     deleteFlow.approvalAssignments = deleteCore().createAssignments(deleteFlow.approvals);
     deleteFlow.result = null;
+    deleteFlow.resourcePage = 1;
+    deleteFlow.approvalPage = 1;
     document.getElementById("delete-user-meta").innerHTML = '<span>' + escapeHtml(user.name) + '</span><span class="dot"></span><span>' + escapeHtml(user.account) + '</span><span class="tag tag-blue">' + roleText(user.roleIds) + '</span>';
     document.getElementById("delete-account-hint").textContent = user.account;
     const input = document.getElementById("delete-account-input");
@@ -3009,7 +3070,7 @@ table.data tr:hover td { background: #fafafa; }
     document.getElementById("delete-failure").hidden = true;
     document.getElementById("delete-result").classList.remove("show");
     document.getElementById("btn-view-last-record").classList.remove("show");
-    document.getElementById("delete-footer-note").textContent = "配齐接收人且账号完全匹配后可删除";
+    document.getElementById("delete-footer-note").textContent = "";
     renderDeleteAssignments();
     syncDeleteConfirmButton();
     openModal("delete-wizard");

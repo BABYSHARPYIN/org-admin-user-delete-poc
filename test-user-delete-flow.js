@@ -38,7 +38,6 @@ assignments.r2 = 'u4';
 const approvals = core.createApprovals();
 const approvalAssignments = core.createAssignments(approvals);
 approvalAssignments[approvals[0].id] = 'u2';
-approvalAssignments[approvals[1].id] = 'u4';
 const approvalHistory = [
   { id: 'ap-history-pending', name: '历史节点待审核', referenceType: '历史审核节点', node: '已离开当前节点', currentNode: false, ended: false, referencedUserIds: ['u1'], fallbackAction: '回退待审核' },
   { id: 'ap-history-rejected', name: '历史节点自动驳回', referenceType: '历史审核节点', node: '已审核', currentNode: false, ended: false, referencedUserIds: ['u1'], fallbackAction: '自动驳回' },
@@ -79,13 +78,19 @@ test('delete flow is one page with no progress or navigation controls', () => {
 test('resource and approval handoffs are configured item by item', () => {
   assert(index.includes('id="delete-resource-list"') && index.includes('data-assign-resource'), 'per-resource recipient controls are missing');
   assert(index.includes('id="delete-approval-list"') && index.includes('data-assign-approval'), 'per-approval recipient controls are missing');
+  assert(index.includes('class="input assign-search-input"') && !index.includes('<select class="assign-select"'), 'recipient inputs must support search instead of a select menu');
+  assert(index.includes('>资源列表</h5>') && index.includes('>审核列表</h5>'), 'resource and approval list titles must match the product language');
+  assert(index.includes('id="delete-resource-pager"') && index.includes('id="delete-approval-pager"'), 'both handoff lists must expose pagination');
+  assert(index.includes('<th>状态</th>'), 'approval list must label the status column');
   assert(!index.includes('batch-assignee') && !index.includes('apply-batch-assignee') && !index.includes('data-transfer-check'), 'batch transfer controls must be removed');
   assert(!index.includes('系统统一驳回') && !index.includes('不会转交'), 'approval rejection-only copy must be removed');
   assert((index.match(/data-assign-resource/g) || []).length >= 1, 'resource assignment mount is missing');
 });
 
 test('demo data is small and deletion has no selectable demo path', () => {
-  assert(core.createApprovals().length >= 1 && core.createApprovals().length <= 2, 'approval demo must contain one or two items');
+  const current = core.createApprovals();
+  assert(current.length === 1, 'approval demo must contain the single in-progress item');
+  assert(current.every((approval) => approval.status === '审核中' && !/待审核/.test(approval.node)), 'current approvals must use the audit-in-progress status');
   assert(!index.includes('value="transfer-failure"') && !index.includes('value="approval-failure"') && !index.includes('value="delete-failure"'), 'detailed failure modes must be removed');
   assert(!index.includes('id="delete-scenario"') && !index.includes('演示路径'), 'deletion must use the default successful path');
   assert(!/批量|分步|步骤|向导进度/.test(index + fs.readFileSync(path.join(root, 'user-delete-core.js'), 'utf8')), 'batch and step wording must be absent');
@@ -94,6 +99,7 @@ test('demo data is small and deletion has no selectable demo path', () => {
 test('knowledge base owner transfer entry and modal are present', () => {
   assert(index.includes('id="btn-transfer-kb-owner"'), 'knowledge-base owner transfer entry is missing');
   assert(index.includes('id="modal-kb-owner-transfer"'), 'knowledge-base owner transfer modal is missing');
+  assert(index.includes('<h3 id="kb-owner-transfer-title">知识库转让</h3>'), 'knowledge-base transfer dialog title is missing');
   assert(index.includes('id="kb-owner-search"') && index.includes('id="kb-owner-candidates"'), 'knowledge-base owner recipient picker is missing');
   assert(index.includes('转移所有者'), 'knowledge-base owner transfer copy is missing');
   assert(index.includes('class="kb-instance-side"') && index.includes('class="kb-instance-tab active"'), 'knowledge-base page should reuse the system settings layout');
@@ -108,7 +114,7 @@ test('only active admin or sub-admin recipients are eligible', () => {
 
 test('only owner resources enter transfer and every approval has a recipient', () => {
   assert(owned.length === 2 && owned.every((resource) => resource.relation === 'owner'), 'only owner resources should be transferable');
-  assert(approvals.length >= 1 && approvals.length <= 2, 'approval fixture should be small');
+  assert(approvals.length === 1 && approvals[0].status === '审核中', 'approval fixture should be one in-progress item');
   assert(approvals.every((approval) => approval.option === '审核转让'), 'approvals should use handoff semantics');
 });
 

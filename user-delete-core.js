@@ -80,8 +80,7 @@
 
   function createApprovals() {
     return [
-      { id: 'ap-drawing', name: '图纸发布审批', referenceType: '当前审核节点', node: '当前节点 · 待审核', currentNode: true, ended: false, referencedUserIds: ['u1'], assigneeId: 'u1', option: '审核转让' },
-      { id: 'ap-kb', name: '知识库创建审批', referenceType: '当前审核节点', node: '当前节点 · 审核中', currentNode: true, ended: false, referencedUserIds: ['u1'], assigneeId: 'u1', option: '审核转让' },
+      { id: 'ap-kb', name: '知识库创建审批', referenceType: '当前审核节点', status: '审核中', node: '审核中', currentNode: true, ended: false, referencedUserIds: ['u1'], assigneeId: 'u1', option: '审核转让' },
     ];
   }
 
