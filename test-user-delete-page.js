@@ -106,7 +106,11 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   const page = loadPage();
   page.openUser('u1');
   assert(page.get('delete-wizard').classList.contains('show'));
-  assert.equal(page.select('[data-assign-resource]').length, 2, 'demo should have two owned resources');
+  const resourceList = page.get('delete-resource-list').innerHTML;
+  assert(resourceList.includes('测试知识库') && resourceList.includes('知识库'), '知识库 owner resource must stay in the transfer list');
+  assert(resourceList.includes('售前 Agent') && resourceList.includes('Agent'), 'Agent owner resource must stay in the transfer list');
+  assert(resourceList.includes('工艺文件包') && resourceList.includes('图纸库'), '图纸库 owner resource must appear in the transfer list');
+  assert.equal(page.select('[data-assign-resource]').length, 3, 'demo should include 知识库, Agent, and 图纸库');
   assert.equal(page.select('[data-assign-approval]').length, 1, 'demo should have one in-progress approval');
   assert(!page.get('delete-approval-list').innerHTML.includes('图纸归档审批'), 'historical nodes must not appear in the handoff list');
   page.input('zhangwei');
@@ -128,7 +132,7 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   page.get('btn-delete-account-confirm').click();
   assert(!page.get('delete-wizard').classList.contains('show'), 'repeated confirmation must keep the dialog closed');
   page.openUser('u2');
-  assert.equal(page.select('[data-assign-resource]').length, 2, 'recipient must now own transferred resources');
+  assert.equal(page.select('[data-assign-resource]').length, 3, 'recipient must now own transferred resources');
   assert.equal(page.select('[data-assign-approval]').length, 1, 'recipient must now receive transferred approvals');
   assert.equal(page.get('delete-account-input').value, '', 'new deletion must reset account');
   assert.equal(page.get('delete-account-input').disabled, false);
@@ -166,6 +170,6 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   assert.equal(page.get('kb-owner-name').textContent, '李娜');
   assert.equal(page.get('modal-kb-owner-transfer').classList.contains('show'), false);
   page.openUser('u1');
-  assert.equal(page.select('[data-assign-resource]').length, 1, 'independently transferred KB must leave old owner deletion');
+  assert.equal(page.select('[data-assign-resource]').length, 2, 'independently transferred KB must leave the Agent and 图纸库 with the old owner');
 }
 console.log('Node page event regression tests passed');
