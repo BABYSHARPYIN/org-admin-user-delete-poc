@@ -1600,7 +1600,6 @@ table.data tr:hover td { background: #fafafa; }
         </form>
       </div>
       <div class="modal-footer">
-        <span id="user-footer-view" style="color:var(--text-tertiary);font-size:12px">用户信息仅供查看</span>
         <span style="flex:1"></span>
         <button class="btn" type="button" data-close="modal-user" id="btn-cancel-user" hidden>取消</button>
         <button class="btn btn-primary" type="button" id="btn-save-user" hidden>保存</button>
@@ -2621,7 +2620,6 @@ table.data tr:hover td { background: #fafafa; }
     document.getElementById("btn-delete-user").hidden = !isView;
     document.getElementById("btn-save-user").hidden = !editing;
     document.getElementById("btn-cancel-user").hidden = !editing;
-    document.getElementById("user-footer-view").style.display = isView ? "" : "none";
     ["uf-name", "uf-account", "uf-email", "uf-phone", "uf-account-type"].forEach((id) => {
       document.getElementById(id).disabled = !editing;
     });
