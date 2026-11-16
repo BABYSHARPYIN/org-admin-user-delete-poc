@@ -1219,7 +1219,6 @@ table.data tr:hover td { background: #fafafa; }
   .drawer-actions .btn-primary { background:#111; border-color:#111; }
   .drawer-actions .btn-danger { border-color:#ffa39e; color:#ff4d4f; }
   .drawer-readonly .input, .drawer-readonly .select, .drawer-readonly .textarea { border-color:#e8e8e8; box-shadow:none; }
-  .json-view { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; line-height:1.5; min-height:140px; white-space:pre; }
   .sso-actions { display:flex; align-items:center; gap:8px; }
   .kb-pane { flex:1; min-width:0; overflow:auto; padding:16px 20px 24px; background:#fff; }
   .kb-pane > h1 { font-size:16px; font-weight:600; line-height:1.4; margin:0 0 4px; }
@@ -1595,12 +1594,8 @@ table.data tr:hover td { background: #fafafa; }
             <div class="field-error" id="err-roles">请选择账号类型</div>
           </div>
           <div class="form-row">
-            <label for="uf-employee-no">员工工号</label>
-            <input class="input" id="uf-employee-no" maxlength="32" />
-          </div>
-          <div class="form-row">
-            <label for="uf-customer-info">用户信息</label>
-            <textarea class="textarea json-view" id="uf-customer-info" readonly></textarea>
+            <label for="uf-employee-no">SSO_ID</label>
+            <input class="input" id="uf-employee-no" readonly />
           </div>
         </form>
       </div>
@@ -2585,17 +2580,6 @@ table.data tr:hover td { background: #fafafa; }
     }
   }
 
-  function confirmEmployeeNoChange(user, next, onOk) {
-    const from = user.employeeNo || "空";
-    const to = next || "空";
-    confirmDialog(
-      "确认变更员工工号",
-      `确认将员工工号从 <strong>${escapeHtml(from)}</strong> 改为 <strong>${escapeHtml(to)}</strong>？`,
-      onOk,
-      { danger: false, okText: "确认并同步" }
-    );
-  }
-
   function openUserForm(userId) {
     state.editingUserId = userId || null;
     const isEdit = !!userId;
@@ -2612,7 +2596,6 @@ table.data tr:hover td { background: #fafafa; }
       document.getElementById("uf-email").value = user.email || "";
       document.getElementById("uf-phone").value = user.phone || "";
       document.getElementById("uf-employee-no").value = user.employeeNo || "";
-      document.getElementById("uf-customer-info").value = user.customerInfo || "";
       fillAccountType(user.roleIds);
     } else {
       document.getElementById("uf-id").value = "";
@@ -2622,7 +2605,6 @@ table.data tr:hover td { background: #fafafa; }
       document.getElementById("uf-email").value = "";
       document.getElementById("uf-phone").value = "";
       document.getElementById("uf-employee-no").value = "";
-      document.getElementById("uf-customer-info").value = "";
       fillAccountType(["r-user"]);
     }
     openModal("modal-user");
@@ -2640,10 +2622,10 @@ table.data tr:hover td { background: #fafafa; }
     document.getElementById("btn-save-user").hidden = !editing;
     document.getElementById("btn-cancel-user").hidden = !editing;
     document.getElementById("user-footer-view").style.display = isView ? "" : "none";
-    ["uf-name", "uf-account", "uf-email", "uf-phone", "uf-account-type", "uf-employee-no"].forEach((id) => {
+    ["uf-name", "uf-account", "uf-email", "uf-phone", "uf-account-type"].forEach((id) => {
       document.getElementById(id).disabled = !editing;
     });
-    document.getElementById("uf-customer-info").readOnly = true;
+    document.getElementById("uf-employee-no").readOnly = true;
     document.getElementById("user-form").classList.toggle("drawer-readonly", isView);
   }
 
@@ -2654,7 +2636,6 @@ table.data tr:hover td { background: #fafafa; }
       password: document.getElementById("uf-password").value,
       email: document.getElementById("uf-email").value.trim(),
       phone: document.getElementById("uf-phone").value.trim(),
-      employeeNo: document.getElementById("uf-employee-no").value.trim(),
       roleIds: document.getElementById("uf-account-type").value ? [document.getElementById("uf-account-type").value] : [],
     };
   }
@@ -2705,10 +2686,6 @@ table.data tr:hover td { background: #fafafa; }
       toast("账号已存在", "error");
       return;
     }
-    if (fields.employeeNo && users.some((user) => (user.employeeNo || "") === fields.employeeNo && user.id !== state.editingUserId)) {
-      toast("该员工工号已绑定其他用户", "error");
-      return;
-    }
     if (!isEdit) {
       const user = {
         id: "u" + Date.now(),
@@ -2721,7 +2698,6 @@ table.data tr:hover td { background: #fafafa; }
         customerInfo: "",
         orgId: null,
       };
-      if (fields.employeeNo) syncCustomerUserInfo(user, fields.employeeNo);
       users.push(user);
       kbCandidateUsers.push({ account: user.account, name: user.name, email: user.email || "" });
       finishSave("已创建用户 " + fields.name);
@@ -2729,15 +2705,9 @@ table.data tr:hover td { background: #fafafa; }
     }
     const user = users.find((item) => item.id === state.editingUserId);
     const previousAccount = user.account;
-    const changedNo = (user.employeeNo || "") !== fields.employeeNo;
-    const commit = () => {
-      applyPlatformFields(user, fields);
-      retargetDirectGrants(previousAccount, user);
-      if (changedNo) syncCustomerUserInfo(user, fields.employeeNo);
-      finishSave("已保存");
-    };
-    if (changedNo) confirmEmployeeNoChange(user, fields.employeeNo, commit);
-    else commit();
+    applyPlatformFields(user, fields);
+    retargetDirectGrants(previousAccount, user);
+    finishSave("已保存");
   });
 
   // ——— Knowledge base authorization list ———
