@@ -96,8 +96,10 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   const page = loadPage();
   page.select('[data-view]').find((button) => button.dataset.view === 'u1').click();
   assert.equal(page.get('uf-employee-no').value, 'XH10021', 'customer-synced SSO_ID should be displayed');
+  assert.equal(page.get('uf-employee-no').disabled, true, 'SSO_ID must be disabled while viewing');
   page.get('btn-edit-user').click();
   assert.equal(page.get('uf-employee-no').readOnly, true, 'SSO_ID must remain readonly while editing');
+  assert.equal(page.get('uf-employee-no').disabled, true, 'SSO_ID must stay disabled while editing');
   assert.equal(page.select('#uf-customer-info').length, 0, 'employee JSON field must not exist in the frontend');
   page.get('uf-name').value = '张伟更新';
   page.get('uf-employee-no').value = 'XH10029';
@@ -108,6 +110,7 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   assert.equal(page.get('uf-name').value, '张伟更新', 'other editable fields must still save');
   page.get('btn-create-user').click();
   assert.equal(page.get('uf-employee-no').readOnly, true, 'SSO_ID must be readonly during creation');
+  assert.equal(page.get('uf-employee-no').disabled, true, 'SSO_ID must stay disabled during creation');
   assert.equal(page.get('uf-employee-no').value, '', 'new platform user starts without SSO_ID');
   page.get('uf-name').value = '测试新用户';
   page.get('uf-account').value = 'readonly-sso-test';
