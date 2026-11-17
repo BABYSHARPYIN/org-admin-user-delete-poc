@@ -91,6 +91,38 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   return { get, change, input, openUser, assign, select };
 }
 
+
+{
+  const page = loadPage();
+  page.select('[data-view]').find((button) => button.dataset.view === 'u1').click();
+  assert.equal(page.get('uf-employee-no').value, 'XH10021', 'customer-synced SSO_ID should be displayed');
+  page.get('btn-edit-user').click();
+  assert.equal(page.get('uf-employee-no').readOnly, true, 'SSO_ID must remain readonly while editing');
+  assert.equal(page.select('#uf-customer-info').length, 0, 'employee JSON field must not exist in the frontend');
+  page.get('uf-name').value = '张伟更新';
+  page.get('uf-employee-no').value = 'XH10029';
+  page.get('btn-save-user').click();
+  assert(!page.get('modal-confirm').classList.contains('show'), 'saving platform fields must not confirm a manual SSO_ID change');
+  page.select('[data-view]').find((button) => button.dataset.view === 'u1').click();
+  assert.equal(page.get('uf-employee-no').value, 'XH10021', 'saving must preserve the synchronized SSO_ID even if the DOM value changes');
+  assert.equal(page.get('uf-name').value, '张伟更新', 'other editable fields must still save');
+  page.get('btn-create-user').click();
+  assert.equal(page.get('uf-employee-no').readOnly, true, 'SSO_ID must be readonly during creation');
+  assert.equal(page.get('uf-employee-no').value, '', 'new platform user starts without SSO_ID');
+  page.get('uf-name').value = '测试新用户';
+  page.get('uf-account').value = 'readonly-sso-test';
+  page.get('uf-password').value = 'secret1';
+  page.get('uf-account-type').value = 'r-user';
+  page.get('uf-employee-no').value = 'XH10029';
+  page.get('btn-save-user').click();
+  page.get('user-search').value = 'readonly-sso-test';
+  page.get('user-search').dispatch('input', { target: page.get('user-search') });
+  const created = page.select('[data-view]').find((button) => !/^u(?:[1-9]|1[0-2])$/.test(button.dataset.view));
+  assert(created, 'new user should still save');
+  created.click();
+  assert.equal(page.get('uf-employee-no').value, '', 'manual creation must not assign SSO_ID');
+}
+
 {
   const page = loadPage(undefined, { createApprovalHistory: undefined });
   assert(page.select('[data-view]').length >= 10, 'cached core without the optional history factory must still render the user list');
