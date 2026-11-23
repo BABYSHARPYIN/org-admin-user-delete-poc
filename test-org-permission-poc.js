@@ -31,4 +31,15 @@ assert(!html.includes('<option value="owner">'), 'normal authorization cannot di
 assert(html.includes('member.role !== "owner"'), 'normal role editor must preserve owner');
 assert(html.includes('item.account !== id || item.role === "owner"'), 'normal authorization removal must preserve owner');
 assert(html.includes('const KB_ROLE_LABEL = { owner: "所有者", editor: "编辑者", viewer: "使用者" }'));
+for (const formerOwnerRole of ['editor', 'viewer', 'none']) {
+  const result = core.transferOwnership({ ...request, formerOwnerRole });
+  assert.equal(result.success, true);
+  assert.equal(result.formerOwnerRole, formerOwnerRole, 'core must preserve the selected valid role');
+}
+assert.equal(success.formerOwnerRole, 'editor', 'existing callers retain the editor default');
+for (const formerOwnerRole of ['', 'owner', 'admin', null]) {
+  const result = core.transferOwnership({ ...request, formerOwnerRole });
+  assert.equal(result.success, false, 'invalid former owner role must be rejected');
+  assert.equal(resource.ownerId, 'u1', 'invalid input cannot change ownership');
+}
 console.log('knowledge-base owner transfer tests passed');

@@ -1106,6 +1106,7 @@ table.data tr:hover td { background: #fafafa; }
 .link-danger.link-transfer { color: var(--link); }
 .link-danger.link-transfer:hover { color: var(--link-hover); }
 .kb-role-select { max-width: 130px; }
+#kb-former-owner-role-hint { color: var(--text-secondary); }
 
 
 #kb-org-picker {
@@ -1729,6 +1730,15 @@ table.data tr:hover td { background: #fafafa; }
           <label for="kb-owner-search">接收人</label>
           <input class="input" id="kb-owner-search" placeholder="搜索姓名或账号" autocomplete="off" />
           <div class="kb-owner-candidates" id="kb-owner-candidates" role="listbox" aria-label="所有者接收人"></div>
+        </div>
+        <div class="form-row">
+          <label for="kb-former-owner-role">原所有者转让后的角色</label>
+          <select class="input" id="kb-former-owner-role" aria-describedby="kb-former-owner-role-hint">
+            <option value="editor">编辑者</option>
+            <option value="viewer">使用者</option>
+            <option value="none">无</option>
+          </select>
+          <div class="form-hint" id="kb-former-owner-role-hint">选择「无」将移除原所有者的直接成员权限；通过组织或公开访问获得的权限不受影响。</div>
         </div>
         <div class="field-error" id="kb-owner-error" role="alert"></div>
       </div>
@@ -3395,10 +3405,11 @@ table.data tr:hover td { background: #fafafa; }
     document.querySelector(".delete-body").scrollTop = 0;
   }
 
-  function updateKbOwnerMembership(ownerId) {
+  function updateKbOwnerMembership(ownerId, formerOwnerRole = "editor") {
     const owner = users.find((user) => user.id === ownerId);
     if (!owner) return;
-    kbMembers.forEach((member) => { if (member.role === "owner") member.role = "editor"; });
+    kbMembers = kbMembers.filter((member) => member.role !== "owner" || formerOwnerRole !== "none");
+    kbMembers.forEach((member) => { if (member.role === "owner") member.role = formerOwnerRole; });
     const member = kbMembers.find((item) => item.account === owner.account);
     if (member) member.role = "owner";
     else kbMembers.push({ account: owner.account, name: owner.name, role: "owner" });
@@ -3474,6 +3485,7 @@ table.data tr:hover td { background: #fafafa; }
     const search = document.getElementById("kb-owner-search");
     search.value = "";
     search.dataset.selectedId = "";
+    document.getElementById("kb-former-owner-role").value = "editor";
     document.getElementById("kb-owner-candidates").innerHTML = "";
     document.getElementById("kb-owner-error").classList.remove("show");
     document.getElementById("btn-confirm-kb-owner").disabled = true;
@@ -3512,6 +3524,7 @@ table.data tr:hover td { background: #fafafa; }
       resource: kb,
       users,
       recipientId: document.getElementById("kb-owner-search").dataset.selectedId,
+      formerOwnerRole: document.getElementById("kb-former-owner-role").value,
       mode: "success",
     });
     if (!result.success) {
@@ -3521,7 +3534,7 @@ table.data tr:hover td { background: #fafafa; }
       return;
     }
     demoResources = demoResources.map((resource) => resource.id === kb.id ? result.resource : resource);
-    updateKbOwnerMembership(result.resource.ownerId);
+    updateKbOwnerMembership(result.resource.ownerId, result.formerOwnerRole);
     closeModal("modal-kb-owner-transfer");
     toast("已转移所有者");
   });
