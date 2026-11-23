@@ -219,4 +219,44 @@ function loadPage(approvalFixtures, coreOverrides = {}) {
   page.openUser('u1');
   assert.equal(page.select('[data-assign-resource]').length, 2, 'independently transferred KB must leave the Agent and 图纸库 with the old owner');
 }
+// A transfer must apply the selected role rather than always demote to editor.
+for (const role of ['editor', 'viewer', 'none']) {
+  const page = loadPage();
+  page.get('btn-transfer-kb-owner').click();
+  const roleSelect = page.get('kb-former-owner-role');
+  assert.equal(roleSelect.value, 'none', 'each transfer defaults to no direct access');
+  page.change(roleSelect, role);
+  page.get('kb-owner-search').value = 'lina';
+  page.get('kb-owner-search').dispatch('input');
+  page.select('[data-owner-recipient="u2"]')[0].click();
+  page.get('btn-confirm-kb-owner').click();
+  assert.equal(page.get('kb-owner-name').textContent, '李娜');
+  const formerMember = page.select('select[data-id="zhangwei"]')[0];
+  if (role === 'none') {
+    assert.equal(formerMember, undefined, 'none removes the old owner from direct members');
+    assert(!page.get('kb-member-tbody').innerHTML.includes('zhangwei'));
+  } else {
+    assert(formerMember, 'the old owner remains a direct member');
+    const oldRow = page.get('kb-member-tbody').innerHTML.split('<tr>').find((row) => row.includes('data-id="zhangwei"'));
+    assert(oldRow.includes('value="' + role + '" selected'), 'selected role must appear on the old owner row');
+  }
+  assert.equal((page.get('kb-member-tbody').innerHTML.match(/class="owner-badge"/g) || []).length, 1, 'there is exactly one owner');
+  assert(page.get('kb-member-tbody').innerHTML.includes('研发部'), 'organization access is preserved');
+  page.get('btn-transfer-kb-owner').click();
+  assert.equal(roleSelect.value, 'none', 'reopening resets the role to none');
+  assert.equal(page.get('btn-confirm-kb-owner').disabled, true, 'reopening clears the recipient');
+}
+{
+  const page = loadPage();
+  page.get('btn-transfer-kb-owner').click();
+  page.change(page.get('kb-former-owner-role'), 'none');
+  page.select('[data-close="modal-kb-owner-transfer"]')[0].click();
+  assert.equal(page.get('kb-owner-name').textContent, '张伟', 'cancel does not change ownership');
+  assert(page.get('kb-member-tbody').innerHTML.includes('zhangwei'), 'cancel preserves direct access');
+  page.openUser('u1');
+  page.assign();
+  page.input('zhangwei');
+  page.get('btn-delete-account-confirm').click();
+  assert.equal(page.get('kb-owner-name').textContent, '李娜', 'delete flow stays independent of the transfer role field');
+}
 console.log('Node page event regression tests passed');
