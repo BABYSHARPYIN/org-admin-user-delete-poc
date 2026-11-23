@@ -36,7 +36,7 @@ for (const formerOwnerRole of ['editor', 'viewer', 'none']) {
   assert.equal(result.success, true);
   assert.equal(result.formerOwnerRole, formerOwnerRole, 'core must preserve the selected valid role');
 }
-assert.equal(success.formerOwnerRole, 'editor', 'existing callers retain the editor default');
+assert.equal(success.formerOwnerRole, 'none', 'omitting the role defaults to no direct access');
 for (const formerOwnerRole of ['', 'owner', 'admin', null]) {
   const result = core.transferOwnership({ ...request, formerOwnerRole });
   assert.equal(result.success, false, 'invalid former owner role must be rejected');

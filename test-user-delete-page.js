@@ -224,7 +224,7 @@ for (const role of ['editor', 'viewer', 'none']) {
   const page = loadPage();
   page.get('btn-transfer-kb-owner').click();
   const roleSelect = page.get('kb-former-owner-role');
-  assert.equal(roleSelect.value, 'editor', 'each transfer starts with the existing editor behavior');
+  assert.equal(roleSelect.value, 'none', 'each transfer defaults to no direct access');
   page.change(roleSelect, role);
   page.get('kb-owner-search').value = 'lina';
   page.get('kb-owner-search').dispatch('input');
@@ -243,7 +243,7 @@ for (const role of ['editor', 'viewer', 'none']) {
   assert.equal((page.get('kb-member-tbody').innerHTML.match(/class="owner-badge"/g) || []).length, 1, 'there is exactly one owner');
   assert(page.get('kb-member-tbody').innerHTML.includes('研发部'), 'organization access is preserved');
   page.get('btn-transfer-kb-owner').click();
-  assert.equal(roleSelect.value, 'editor', 'reopening resets the role');
+  assert.equal(roleSelect.value, 'none', 'reopening resets the role to none');
   assert.equal(page.get('btn-confirm-kb-owner').disabled, true, 'reopening clears the recipient');
 }
 {

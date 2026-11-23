@@ -23,10 +23,12 @@ for (const role of ['editor', 'viewer', 'none']) {
     const select = get('kb-former-owner-role');
     const transfer = (account, selectedRole) => {
       get('btn-transfer-kb-owner').click();
-      assert.equal(select.value, 'editor');
+      assert.equal(select.value, 'none');
       assert.equal(get('btn-confirm-kb-owner').disabled, true);
-      select.value = selectedRole;
-      select.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+      if (selectedRole !== undefined) {
+        select.value = selectedRole;
+        select.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+      }
       input('kb-owner-search', account);
       const candidate = d.querySelector('[data-owner-recipient]');
       assert(candidate, 'eligible recipient is searchable');
@@ -40,8 +42,8 @@ for (const role of ['editor', 'viewer', 'none']) {
     assert(get('page-kb-perm').classList.contains('active'));
     get('btn-transfer-kb-owner').click();
     assert.deepEqual([...select.options].map((o) => [o.value, o.textContent]), [['editor', '编辑者'], ['viewer', '使用者'], ['none', '无']]);
-    assert.equal(select.labels[0].textContent, '原所有者转让后的角色');
-    select.value = 'none';
+    assert.equal(select.labels[0].textContent, '原所有者角色');
+    select.value = 'editor';
     get('modal-kb-owner-transfer').querySelector('[data-close]').click();
     assert.equal(get('kb-owner-name').textContent, '张伟');
 
@@ -52,7 +54,7 @@ for (const role of ['editor', 'viewer', 'none']) {
     get('kb-auth-role').value = 'viewer';
     get('btn-confirm-kb-auth').click();
     assert.equal(memberRole('lina').value, 'viewer');
-    transfer('lina', role);
+    transfer('lina', role === 'none' ? undefined : role);
     assert.equal(get('kb-owner-name').textContent, '李娜');
     assert.equal(ownerRows().length, 1);
     assert(ownerRows()[0].textContent.includes('lina'));

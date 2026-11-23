@@ -1732,11 +1732,11 @@ table.data tr:hover td { background: #fafafa; }
           <div class="kb-owner-candidates" id="kb-owner-candidates" role="listbox" aria-label="所有者接收人"></div>
         </div>
         <div class="form-row">
-          <label for="kb-former-owner-role">原所有者转让后的角色</label>
+          <label for="kb-former-owner-role">原所有者角色</label>
           <select class="input" id="kb-former-owner-role" aria-describedby="kb-former-owner-role-hint">
             <option value="editor">编辑者</option>
             <option value="viewer">使用者</option>
-            <option value="none">无</option>
+            <option value="none" selected>无</option>
           </select>
           <div class="form-hint" id="kb-former-owner-role-hint">选择「无」将移除原所有者的直接成员权限；通过组织或公开访问获得的权限不受影响。</div>
         </div>
@@ -3485,7 +3485,7 @@ table.data tr:hover td { background: #fafafa; }
     const search = document.getElementById("kb-owner-search");
     search.value = "";
     search.dataset.selectedId = "";
-    document.getElementById("kb-former-owner-role").value = "editor";
+    document.getElementById("kb-former-owner-role").value = "none";
     document.getElementById("kb-owner-candidates").innerHTML = "";
     document.getElementById("kb-owner-error").classList.remove("show");
     document.getElementById("btn-confirm-kb-owner").disabled = true;

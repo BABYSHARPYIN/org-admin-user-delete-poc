@@ -128,9 +128,9 @@
     if (!resource || !isEligibleRecipient(recipient, resource.ownerId)) {
       return { success: false, error: '请选择状态正常的管理员或子管理员，且不能是当前所有者' };
     }
-    const formerOwnerRole = config.formerOwnerRole === undefined ? 'editor' : config.formerOwnerRole;
+    const formerOwnerRole = config.formerOwnerRole === undefined ? 'none' : config.formerOwnerRole;
     if (['editor', 'viewer', 'none'].indexOf(formerOwnerRole) === -1) {
-      return { success: false, error: '请选择原所有者转让后的角色' };
+      return { success: false, error: '请选择原所有者角色' };
     }
     if (config.mode !== 'success') return { success: false, error: config.mode === 'failure' ? '所有者转移失败，请重试' : '不支持的演示路径' };
     return { success: true, resource: Object.assign({}, resource, { ownerId: recipient.id }), formerOwnerRole };
